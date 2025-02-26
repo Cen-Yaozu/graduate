@@ -87,7 +87,7 @@ public class Student implements Serializable {
     private String zipCode;
     /**
      * 
-电话
+        电话
      */
     @TableField("studentPhone")
     private String studentPhone;

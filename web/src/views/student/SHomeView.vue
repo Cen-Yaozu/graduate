@@ -8,10 +8,14 @@
             :collapse="isCollapse"
             default-active="/calendar"
         >
-          <a href="/calendar" class="logo">
+          <router-link to="/calendar" class="logo">
             <img src="../../assets/img/sh-logo1.png"/>
             <h1 v-show="!isCollapse">广州软件学院</h1>
-          </a>
+          </router-link>
+          <el-menu-item index="/calendar">
+            <el-icon><Calendar /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
           <el-menu-item index="/sinformation">
             <el-icon><User /></el-icon>
             <span>信息管理</span>

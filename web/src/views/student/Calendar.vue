@@ -1,116 +1,43 @@
 <template>
-  <div class="calendar-container">
-    <el-card class="calendar-card">
+  <div class="timeline-container">
+    <el-card class="timeline-card">
       <template #header>
         <div class="card-header">
-          <span>校园日历</span>
-          <div class="calendar-actions">
-          <el-radio-group v-model="calendarView" size="small">
-            <el-radio-button label="month">月视图</el-radio-button>
-            <el-radio-button label="week">周视图</el-radio-button>
-          </el-radio-group>
-            <el-button type="primary" size="small" @click="openAddEventDialog">添加事件</el-button>
+          <span>校园重要日程</span>
+          <div class="event-legend">
+            <span class="legend-item">
+              <span class="color-dot important"></span>重要事件
+            </span>
+            <span class="legend-item">
+              <span class="color-dot exam"></span>考试
+            </span>
+            <span class="legend-item">
+              <span class="color-dot holiday"></span>假期
+            </span>
           </div>
         </div>
       </template>
       
-      <el-calendar v-if="calendarView === 'month'" ref="calendar">
-        <template #dateCell="{ data }">
-          <div class="calendar-cell">
-            <p :class="data.isSelected ? 'is-selected' : ''">
-              {{ data.day.split('-').slice(2).join('-') }}
-            </p>
-            <div class="event-list">
-              <div 
-                v-for="(event, index) in getEventsForDate(data.day)" 
-                :key="index"
-                class="event-item"
-                :class="event.type"
-                @click="handleEventClick(event)"
-              >
-                {{ event.title }}
-              </div>
-            </div>
+      <el-timeline>
+        <el-timeline-item
+          v-for="event in sortedEvents"
+          :key="event.id"
+          :type="event.type"
+          :color="getEventColor(event.type)"
+          :timestamp="formatDate(event.date)"
+        >
+          <div class="timeline-content" @click="handleEventClick(event)">
+            <h4 class="event-title">{{ event.title }}</h4>
+            <p class="event-target">适用对象：{{ getEventTargets(event.target) }}</p>
           </div>
-        </template>
-      </el-calendar>
-      
-      <div v-else class="week-view">
-        <el-calendar ref="weekCalendar" :range="weekRange">
-          <template #dateCell="{ data }">
-            <div class="calendar-cell">
-              <p :class="data.isSelected ? 'is-selected' : ''">
-                {{ data.day.split('-').slice(2).join('-') }}
-              </p>
-              <div class="event-list">
-                <div 
-                  v-for="(event, index) in getEventsForDate(data.day)" 
-                  :key="index" 
-                  class="event-item"
-                  :class="event.type"
-                  @click="handleEventClick(event)"
-                >
-                  {{ event.title }}
-                </div>
-              </div>
-        </div>
-          </template>
-        </el-calendar>
-      </div>
+        </el-timeline-item>
+      </el-timeline>
     </el-card>
     
-    <!-- 添加事件对话框 -->
-    <el-dialog v-model="dialogVisible" title="添加校园事件" width="500px">
-      <el-form :model="eventForm" label-width="100px" :rules="rules" ref="eventFormRef">
-        <el-form-item label="事件标题" prop="title">
-          <el-input v-model="eventForm.title" placeholder="请输入事件标题"></el-input>
-        </el-form-item>
-        <el-form-item label="事件日期" prop="date">
-          <el-date-picker 
-            v-model="eventForm.date" 
-            type="date" 
-            placeholder="选择日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-          ></el-date-picker>
-        </el-form-item>
-        <el-form-item label="事件类型" prop="type">
-          <el-select v-model="eventForm.type" placeholder="请选择事件类型">
-            <el-option label="普通事件" value="normal"></el-option>
-            <el-option label="重要事件" value="important"></el-option>
-            <el-option label="考试事件" value="exam"></el-option>
-            <el-option label="假期事件" value="holiday"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="事件内容" prop="content">
-          <el-input 
-            v-model="eventForm.content" 
-            type="textarea" 
-            :rows="4" 
-            placeholder="请输入事件详细内容"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="适用对象" prop="target">
-          <el-checkbox-group v-model="eventForm.target">
-            <el-checkbox label="all">全体师生</el-checkbox>
-            <el-checkbox label="teacher">教师</el-checkbox>
-            <el-checkbox label="student">学生</el-checkbox>
-            <el-checkbox label="freshman">新生</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveEvent">保存</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
     <!-- 事件详情对话框 -->
     <el-dialog v-model="eventDetailVisible" :title="currentEvent.title" width="500px">
       <div class="event-detail">
-        <p><strong>日期:</strong> {{ currentEvent.date }}</p>
+        <p><strong>日期:</strong> {{ formatDateRange(currentEvent) }}</p>
         <p><strong>类型:</strong> {{ getEventTypeName(currentEvent.type) }}</p>
         <p><strong>适用对象:</strong> {{ getEventTargets(currentEvent.target) }}</p>
         <p><strong>内容:</strong></p>
@@ -119,8 +46,6 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="eventDetailVisible = false">关闭</el-button>
-          <el-button type="warning" @click="openEditDialog">编辑</el-button>
-          <el-button type="danger" @click="deleteEvent">删除</el-button>
         </span>
       </template>
     </el-dialog>
@@ -128,124 +53,89 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed } from 'vue'
 
 export default {
-  name: 'CalendarView',
+  name: 'TimelineView',
   setup() {
-    const calendarView = ref('month')
-    const dialogVisible = ref(false)
     const eventDetailVisible = ref(false)
-    const eventFormRef = ref(null)
     const currentEvent = ref({})
-    const currentDate = ref(new Date())
-    const isEditMode = ref(false)
 
-    // 模拟后端数据
+    // 固定的校历事件数据
     const events = ref([
-        {
-          id: 1,
-          title: '新生入学报到',
-        date: '2024-09-01',
+      {
+        id: 1,
+        title: '新生入学报到',
+        date: '2024-09-07',
         type: 'important',
-        content: '所有2024级新生在各系报到点进行入学报到手续办理，请携带录取通知书和相关证件。',
+        content: '2024级新生在各系报到点进行入学报到手续办理，请携带录取通知书和相关证件。',
         target: ['freshman']
-        },
-        {
-          id: 2,
-        title: '开学典礼',
-        date: '2024-09-03',
-        type: 'normal',
-        content: '全校开学典礼在大礼堂举行，请各班负责人带领学生准时参加。',
+      },
+      {
+        id: 2,
+        title: '新生入学教育',
+        date: '2024-09-08',
+        type: 'important',
+        content: '2024级新生入学教育活动，时间：9月8日-10日。',
+        endDate: '2024-09-10',
+        target: ['freshman']
+      },
+      {
+        id: 3,
+        title: '开学典礼暨军训动员大会',
+        date: '2024-09-11',
+        type: 'important',
+        content: '2024级新生开学典礼暨军训动员大会，请准时参加。',
+        target: ['freshman']
+      },
+      {
+        id: 4,
+        title: '新生军训',
+        date: '2024-09-11',
+        type: 'important',
+        content: '2024级新生军训时间：9月11日-24日，请按照各系通知准时参加。',
+        endDate: '2024-09-24',
+        target: ['freshman']
+      },
+      {
+        id: 5,
+        title: '国庆节放假',
+        date: '2024-10-01',
+        type: 'holiday',
+        content: '国庆节放假时间：10月1日至10月7日，10月8日正常上课。',
+        endDate: '2024-10-07',
         target: ['all']
-        },
-        {
-          id: 3,
+      },
+      {
+        id: 6,
         title: '期中考试',
         date: '2024-10-25',
         type: 'exam',
         content: '上学期期中考试，各科考试安排将在考试前一周公布。',
         target: ['student']
-        },
-        {
-          id: 4,
-        title: '国庆节放假',
-        date: '2024-10-01',
+      },
+      {
+        id: 7,
+        title: '期末考试',
+        date: '2025-01-10',
+        type: 'exam',
+        content: '上学期期末考试周开始，请同学们提前做好复习准备。',
+        target: ['student']
+      },
+      {
+        id: 8,
+        title: '寒假开始',
+        date: '2025-01-20',
         type: 'holiday',
-        content: '国庆节放假时间：10月1日至10月7日，10月8日正常上课。',
+        content: '寒假开始，请同学们按照规定时间离校。',
         target: ['all']
       }
     ])
 
-    const eventForm = reactive({
-      id: null,
-      title: '',
-      date: '',
-      type: 'normal',
-      content: '',
-      target: ['all']
+    // 按日期排序的事件列表
+    const sortedEvents = computed(() => {
+      return [...events.value].sort((a, b) => new Date(a.date) - new Date(b.date))
     })
-
-    const rules = {
-      title: [{ required: true, message: '请输入事件标题', trigger: 'blur' }],
-      date: [{ required: true, message: '请选择事件日期', trigger: 'change' }],
-      type: [{ required: true, message: '请选择事件类型', trigger: 'change' }],
-      content: [{ required: true, message: '请输入事件内容', trigger: 'blur' }],
-      target: [{ required: true, message: '请选择适用对象', trigger: 'change' }]
-    }
-
-    // 计算当前周的起止日期
-    const weekRange = computed(() => {
-      const start = new Date(currentDate.value)
-      const day = start.getDay() || 7
-      start.setDate(start.getDate() - day + 1)
-      const end = new Date(start)
-      end.setDate(end.getDate() + 6)
-      
-      return [start, end]
-    })
-
-    // 根据日期获取事件
-    const getEventsForDate = (date) => {
-      return events.value.filter(event => event.date === date)
-    }
-
-    // 打开添加事件对话框
-    const openAddEventDialog = () => {
-      isEditMode.value = false
-      resetForm()
-      dialogVisible.value = true
-    }
-
-    // 保存事件
-    const saveEvent = () => {
-      eventFormRef.value.validate((valid) => {
-        if (valid) {
-          if (isEditMode.value) {
-            // 更新现有事件
-            const index = events.value.findIndex(e => e.id === eventForm.id)
-            if (index !== -1) {
-              events.value[index] = { ...eventForm }
-              ElMessage.success('事件更新成功')
-              // 保存到后端
-              saveEventToServer(events.value[index])
-            }
-          } else {
-            // 添加新事件
-            const newEvent = { ...eventForm, id: Date.now() }
-            events.value.push(newEvent)
-            ElMessage.success('事件添加成功')
-            // 保存到后端
-            saveEventToServer(newEvent)
-          }
-          dialogVisible.value = false
-          eventDetailVisible.value = false
-        } else {
-          return false
-        }
-      })
-    }
 
     // 处理事件点击
     const handleEventClick = (event) => {
@@ -253,52 +143,45 @@ export default {
       eventDetailVisible.value = true
     }
 
-    // 打开编辑对话框
-    const openEditDialog = () => {
-      Object.assign(eventForm, currentEvent.value)
-      isEditMode.value = true
-      eventDetailVisible.value = false
-      dialogVisible.value = true
-    }
-
-    // 删除事件
-    const deleteEvent = () => {
-      ElMessageBox.confirm('确定要删除这个事件吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const index = events.value.findIndex(e => e.id === currentEvent.value.id)
-        if (index !== -1) {
-          events.value.splice(index, 1)
-          ElMessage.success('事件已删除')
-          eventDetailVisible.value = false
-        }
-      }).catch(() => {})
-    }
-
-    // 重置表单
-    const resetForm = () => {
-      eventForm.id = null
-      eventForm.title = ''
-      eventForm.date = ''
-      eventForm.type = 'normal'
-      eventForm.content = ''
-      eventForm.target = ['all']
-      if (eventFormRef.value) {
-        eventFormRef.value.resetFields()
-      }
-    }
-
     // 获取事件类型名称
     const getEventTypeName = (type) => {
       const typeMap = {
         normal: '普通事件',
         important: '重要事件',
-        exam: '考试事件',
-        holiday: '假期事件'
+        exam: '考试',
+        holiday: '假期'
       }
       return typeMap[type] || type
+    }
+
+    // 获取事件颜色
+    const getEventColor = (type) => {
+      const colorMap = {
+        important: '#f56c6c',
+        exam: '#e6a23c',
+        holiday: '#67c23a',
+        normal: '#409eff'
+      }
+      return colorMap[type] || '#409eff'
+    }
+
+    // 格式化日期
+    const formatDate = (date) => {
+      return new Date(date).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    }
+
+    // 格式化日期范围
+    const formatDateRange = (event) => {
+      const startDate = formatDate(event.date)
+      if (event.endDate) {
+        const endDate = formatDate(event.endDate)
+        return `${startDate} 至 ${endDate}`
+      }
+      return startDate
     }
 
     // 获取事件适用对象名称
@@ -308,73 +191,35 @@ export default {
       const targetMap = {
         all: '全体师生',
         teacher: '教师',
-        student: '学生',
+        student: '在校生',
         freshman: '新生'
       }
       
-      return targets.map(target => targetMap[target] || target).join('、')
+      return Array.isArray(targets) ? targets.map(target => targetMap[target] || target).join('、') : targetMap[targets] || targets
     }
-
-    // 获取事件数据
-    const fetchEvents = async () => {
-      try {
-        // 实际项目中，这里应该调用API获取事件数据
-        // const response = await axios.get('/api/admin/calendar/events')
-        // events.value = response.data
-      } catch (error) {
-        console.error('获取日历事件失败:', error)
-        ElMessage.error('获取日历事件失败')
-      }
-    }
-
-    // 保存事件到后端
-    const saveEventToServer = async (eventData) => {
-      try {
-        // 实际项目中，这里应该调用API保存事件数据
-        console.log('保存事件到后端:', eventData)
-        // const response = await axios.post('/api/admin/calendar/events', eventData)
-        // return response.data
-      } catch (error) {
-        console.error('保存事件失败:', error)
-        ElMessage.error('保存事件失败')
-        return null
-      }
-    }
-
-    onMounted(() => {
-      fetchEvents()
-    })
 
     return {
-      calendarView,
-      dialogVisible,
       eventDetailVisible,
-      eventFormRef,
       currentEvent,
-      weekRange,
-      events,
-      eventForm,
-      rules,
-      getEventsForDate,
-      openAddEventDialog,
-      saveEvent,
+      sortedEvents,
       handleEventClick,
-      openEditDialog,
-      deleteEvent,
       getEventTypeName,
-      getEventTargets
+      getEventTargets,
+      getEventColor,
+      formatDate,
+      formatDateRange
     }
   }
 }
 </script>
 
 <style scoped>
-.calendar-container {
+.timeline-container {
   padding: 20px;
 }
 
-.calendar-card {
-  max-width: 1200px;
+.timeline-card {
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -384,55 +229,57 @@ export default {
   align-items: center;
 }
 
-.calendar-actions {
+.event-legend {
   display: flex;
-  gap: 10px;
+  gap: 15px;
 }
 
-.calendar-cell {
-  height: 100%;
+.legend-item {
   display: flex;
-  flex-direction: column;
-}
-
-.is-selected {
-  color: #1989fa;
-  font-weight: bold;
-}
-
-.event-list {
-  flex: 1;
-  overflow-y: auto;
-  padding-top: 4px;
-}
-
-.event-item {
-  margin-bottom: 4px;
-  padding: 2px 4px;
+  align-items: center;
   font-size: 12px;
-  border-radius: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  color: #fff;
-  background-color: #409eff;
 }
 
-.event-item.important {
+.color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.color-dot.important {
   background-color: #f56c6c;
 }
 
-.event-item.exam {
+.color-dot.exam {
   background-color: #e6a23c;
 }
 
-.event-item.holiday {
+.color-dot.holiday {
   background-color: #67c23a;
 }
 
-.event-item:hover {
-  opacity: 0.8;
+.timeline-content {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.timeline-content:hover {
+  background-color: #f5f7fa;
+}
+
+.event-title {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.event-target {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #909399;
 }
 
 .event-detail {
@@ -445,10 +292,6 @@ export default {
   background-color: #f8f8f8;
   border-radius: 4px;
   white-space: pre-wrap;
-}
-
-.week-view {
-  margin-top: 20px;
 }
 
 .dialog-footer {

@@ -7,51 +7,7 @@
         </div>
       </template>
 
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="待缴费项目" name="unpaid">
-          <el-table :data="unpaidItems" style="width: 100%; height: 300px" :resize-observer="false">
-            <el-table-column prop="name" label="项目名称" />
-            <el-table-column prop="amount" label="金额" width="120">
-              <template #default="scope">
-                ¥{{ scope.row.amount }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="deadline" label="截止日期" width="120" />
-            <el-table-column label="操作" width="120">
-              <template #default="scope">
-                <el-button type="primary" size="small" @click="handlePay(scope.row)">缴费</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="empty-block" v-if="unpaidItems.length === 0">
-            <el-empty description="暂无待缴费项目" />
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane label="缴费记录" name="history">
-          <el-table :data="paymentHistory" style="width: 100%; height: 300px" :resize-observer="false">
-            <el-table-column prop="name" label="项目名称" />
-            <el-table-column prop="amount" label="金额" width="120">
-              <template #default="scope">
-                ¥{{ scope.row.amount }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="paymentDate" label="缴费日期" width="120" />
-            <el-table-column prop="status" label="状态" width="120">
-              <template #default="scope">
-                <el-tag :type="scope.row.status === '已支付' ? 'success' : 'info'">
-                  {{ scope.row.status }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="paymentMethod" label="支付方式" width="120" />
-          </el-table>
-          <div class="empty-block" v-if="paymentHistory.length === 0">
-            <el-empty description="暂无缴费记录" />
-          </div>
-        </el-tab-pane>
-        
-        <el-tab-pane label="直通车缴费情况" name="fastTrack">
+      <div class="payment-content">
           <div class="filter-container">
             <el-input
               v-model="searchText"
@@ -109,8 +65,7 @@
           <div class="empty-block" v-if="filteredFastTrackPayments.length === 0">
             <el-empty description="暂无满足条件的数据" />
           </div>
-        </el-tab-pane>
-      </el-tabs>
+      </div>
     </el-card>
 
     <el-dialog v-model="paymentDialogVisible" title="缴费确认" width="30%">
@@ -150,12 +105,6 @@ export default {
   },
   data() {
     return {
-      activeTab: 'unpaid',
-      paymentDialogVisible: false,
-      paymentMethod: '微信支付',
-      currentPayment: {},
-      unpaidItems: [],
-      paymentHistory: [],
       fastTrackPayments: [
         {
           studentNumber: '2024001',
@@ -211,7 +160,13 @@ export default {
       searchText: '',
       paymentStatus: '',
       currentPage: 1,
-      pageSize: 5
+      pageSize: 5,
+      paymentDialogVisible: false,
+      currentPayment: {
+        name: '',
+        amount: 0
+      },
+      paymentMethod: ''
     }
   },
   computed: {
@@ -246,110 +201,20 @@ export default {
     }
   },
   created() {
-    this.fetchUnpaidItems()
-    this.fetchPaymentHistory()
+    this.fetchFastTrackPayments()
   },
   methods: {
-    async fetchUnpaidItems() {
+    async fetchFastTrackPayments() {
       try {
-        const studentNumber = window.sessionStorage.getItem('studentName')
-        const response = await this.$http.get(`/api/student/payment/unpaid/${studentNumber}`)
-        if (response.data && Array.isArray(response.data)) {
-          this.unpaidItems = response.data
+        const response = await this.$http.get('/api/student/payment/fasttrack')
+        if (response.data.code === 200) {
+          this.fastTrackPayments = response.data.data || []
         } else {
-          console.warn('获取到的待缴费项目不是数组格式', response.data)
-          this.unpaidItems = []
+          throw new Error(response.data.message || '获取直通车缴费数据失败')
         }
       } catch (error) {
-        console.error('获取待缴费项目失败:', error)
-        // 模拟数据
-        this.unpaidItems = [
-          {
-            id: 1,
-            name: '2024年秋季学费',
-            amount: 4800,
-            deadline: '2024-09-01'
-          },
-          {
-            id: 2,
-            name: '2024年秋季住宿费',
-            amount: 1200,
-            deadline: '2024-09-01'
-          }
-        ]
-      }
-    },
-    async fetchPaymentHistory() {
-      try {
-        const studentNumber = window.sessionStorage.getItem('studentName')
-        const response = await this.$http.get(`/api/student/payment/history/${studentNumber}`)
-        if (response.data && Array.isArray(response.data)) {
-          this.paymentHistory = response.data
-        } else {
-          console.warn('获取到的缴费记录不是数组格式', response.data)
-          this.paymentHistory = []
-        }
-      } catch (error) {
-        console.error('获取缴费记录失败:', error)
-        // 模拟数据
-        this.paymentHistory = [
-          {
-            id: 3,
-            name: '2024年春季学费',
-            amount: 4800,
-            paymentDate: '2024-02-15',
-            status: '已支付',
-            paymentMethod: '微信支付'
-          },
-          {
-            id: 4,
-            name: '2024年春季住宿费',
-            amount: 1200,
-            paymentDate: '2024-02-15',
-            status: '已支付',
-            paymentMethod: '微信支付'
-          }
-        ]
-      }
-    },
-    handlePay(item) {
-      this.currentPayment = item
-      this.paymentDialogVisible = true
-    },
-    async confirmPayment() {
-      try {
-        const studentNumber = window.sessionStorage.getItem('studentName')
-        await this.$http.post('/api/student/payment/pay', {
-          studentNumber,
-          paymentId: this.currentPayment.id,
-          method: this.paymentMethod
-        })
-        
-        ElMessage.success('支付成功')
-        this.paymentDialogVisible = false
-        
-        // 更新缴费项目和历史记录
-        await this.fetchUnpaidItems()
-        await this.fetchPaymentHistory()
-      } catch (error) {
-        console.error('支付失败:', error)
-        ElMessage.error('支付失败，请稍后重试')
-        
-        // 模拟支付成功
-        this.paymentDialogVisible = false
-        
-        // 将当前项目从待缴费列表移除
-        this.unpaidItems = this.unpaidItems.filter(item => item.id !== this.currentPayment.id)
-        
-        // 添加到支付历史
-        this.paymentHistory.unshift({
-          id: this.currentPayment.id,
-          name: this.currentPayment.name,
-          amount: this.currentPayment.amount,
-          paymentDate: new Date().toISOString().split('T')[0],
-          status: '已支付',
-          paymentMethod: this.paymentMethod
-        })
+        console.error('获取直通车缴费数据失败:', error)
+        ElMessage.error('获取直通车缴费数据失败')
       }
     },
     handleSearch() {
@@ -362,6 +227,32 @@ export default {
     },
     handlePageChange(page) {
       this.currentPage = page
+    },
+    async confirmPayment() {
+      try {
+        if (!this.paymentMethod) {
+          ElMessage.warning('请选择支付方式')
+          return
+        }
+
+        const paymentInfo = {
+          studentNumber: this.currentPayment.studentNumber,
+          paymentId: this.currentPayment.id,
+          method: this.paymentMethod
+        }
+
+        const response = await this.$http.post('/api/student/payment/pay', paymentInfo)
+        if (response.data.code === 200) {
+          ElMessage.success('支付成功')
+          this.paymentDialogVisible = false
+          this.fetchFastTrackPayments() // 刷新支付数据
+        } else {
+          throw new Error(response.data.message || '支付失败')
+        }
+      } catch (error) {
+        console.error('支付处理失败:', error)
+        ElMessage.error(error.message || '支付处理失败')
+      }
     }
   }
 }

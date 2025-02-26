@@ -1,11 +1,14 @@
 package com.example.serve.controller;
 
-import com.example.serve.pojo.Student;
+import com.example.serve.pojo.Arrive;
+import com.example.serve.service.ArriveService;
 import com.example.serve.service.StudentService;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 抵校管理控制器
@@ -19,6 +22,19 @@ public class ArriveController {
 
     @Autowired
     private StudentService studentService;
+
+    @Autowired
+    private ArriveService arriveService;
+
+    /**
+     * 获取所有学生抵校信息
+     */
+    @GetMapping("/list")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseResult getAllArriveInfo() {
+        List<Arrive> arrives = arriveService.findAll();
+        return ResponseResult.okResult(arrives);
+    }
 
     /**
      * 获取学生抵校状态
@@ -34,19 +50,28 @@ public class ArriveController {
     }
 
     /**
-     * 更新学生抵校状态
+     * 获取学生抵校详细信息
      */
-    @PutMapping("/status")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseResult updateArriveStatus(@RequestParam String studentNumber,
-            @RequestParam Integer status) {
-        Student student = studentService.getStudentByNumber(studentNumber);
-        if (student != null) {
-            // 假设Student类中的抵校状态字段名为arriveStatus
-            student.setArriveStatus(status); // 请确保Student类中有此方法
-            boolean result = studentService.updateStudentInfo(student);
-            return result ? ResponseResult.okResult() : ResponseResult.errorResult(500, "更新抵校状态失败");
+    @GetMapping("/info/{studentNumber}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    public ResponseResult getArriveInfo(@PathVariable String studentNumber) {
+        Arrive arrive = arriveService.findByStudentNumber(studentNumber);
+        if (arrive != null) {
+            return ResponseResult.okResult(arrive);
         }
-        return ResponseResult.errorResult(404, "学生信息不存在");
+        return ResponseResult.errorResult(404, "未找到学生抵校信息");
+    }
+
+    /**
+     * 更新学生抵校信息
+     */
+    @PutMapping("/update")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseResult updateArriveInfo(@RequestBody Arrive arrive) {
+        if (arrive.getStudentNumber() == null) {
+            return ResponseResult.errorResult(400, "学号不能为空");
+        }
+        boolean result = arriveService.updateArrive(arrive);
+        return result ? ResponseResult.okResult() : ResponseResult.errorResult(500, "更新抵校信息失败");
     }
 }
