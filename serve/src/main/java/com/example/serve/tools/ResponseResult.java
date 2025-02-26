@@ -59,7 +59,9 @@ public class ResponseResult<T> implements Serializable {
 
     public static ResponseResult okResult(Object data) {
         ResponseResult result = setAppHttpCodeEnum(AppHttpCodeEnum.SUCCESS, AppHttpCodeEnum.SUCCESS.getMsg());
-        if (data != null) {
+        if (data == null) {
+            // 不设置data，保持为null
+        } else {
             result.setData(data);
         }
         return result;
@@ -94,7 +96,6 @@ public class ResponseResult<T> implements Serializable {
         this.msg = msg;
         return this;
     }
-
 
     public ResponseResult<?> ok(Integer code, T data) {
         this.code = code;
@@ -137,6 +138,5 @@ public class ResponseResult<T> implements Serializable {
     public void setData(T data) {
         this.data = data;
     }
-
 
 }

@@ -17,6 +17,7 @@ import SHomeView from "@/views/student/SHomeView.vue";
 import AHomeView from "@/views/admin/AHomeView";
 import SInformation from "@/views/student/SInformation.vue";
 import Calendar from "@/views/student/Calendar.vue";
+import AdminLayout from "@/views/admin/AdminLayout.vue";
 
 const router=createRouter({
     history:createWebHistory(process.env.BASE_URL),
@@ -141,10 +142,89 @@ const router=createRouter({
             name:"ahome",
             component:AHomeView
         },
+        // 添加管理员路由
+        {
+            path:"/admin",
+            component: AdminLayout,
+            meta: { requiresAdmin: true },
+            children: [
+                {
+                    path: "dashboard",
+                    name: "admin-dashboard",
+                    component: () => import('@/views/admin/DashboardView.vue'),
+                    meta: { title: "仪表盘" }
+                },
+                {
+                    path: "students",
+                    name: "admin-students",
+                    component: () => import('@/views/admin/StudentManageView.vue'),
+                    meta: { title: "学生管理" }
+                }
+                // 以下路由组件尚未创建，先注释掉，避免编译错误
+                /*
+                {
+                    path: "payments",
+                    name: "admin-payments",
+                    component: () => import('@/views/admin/PaymentManageView.vue'), 
+                    meta: { title: "缴费管理" }
+                },
+                {
+                    path: "classes",
+                    name: "admin-classes",
+                    component: () => import('@/views/admin/ClassManageView.vue'),
+                    meta: { title: "班级管理" }
+                },
+                {
+                    path: "dormitories",
+                    name: "admin-dormitories",
+                    component: () => import('@/views/admin/DormManageView.vue'),
+                    meta: { title: "宿舍管理" }
+                },
+                {
+                    path: "teachers",
+                    name: "admin-teachers",
+                    component: () => import('@/views/admin/TeacherManageView.vue'),
+                    meta: { title: "教师管理" }
+                },
+                {
+                    path: "reports",
+                    name: "admin-reports",
+                    component: () => import('@/views/admin/ReportManageView.vue'),
+                    meta: { title: "报表管理" }
+                },
+                {
+                    path: "calendar",
+                    name: "admin-calendar",
+                    component: () => import('@/views/admin/CalendarManageView.vue'),
+                    meta: { title: "校园日历" }
+                },
+                {
+                    path: "password",
+                    name: "admin-password",
+                    component: () => import('@/views/admin/PasswordView.vue'),
+                    meta: { title: "修改密码" }
+                }
+                */
+            ]
+        },
     ]
 });
 // 路由守卫
 router.beforeEach((to,from,next)=>{
+    // 检查是否需要管理员权限
+    if(to.matched.some(record => record.meta.requiresAdmin)) {
+        // 检查两种可能的角色存储
+        const userRole = window.sessionStorage.getItem('userRole');
+        const fullRole = window.sessionStorage.getItem('role');
+        console.log('当前角色:', userRole, fullRole);
+        
+        // 同时检查两种格式的角色
+        if(userRole !== 'ADMIN' && fullRole !== 'ROLE_ADMIN') {
+            console.log('无管理员权限，重定向到登录页');
+            return next('/login');
+        }
+    }
+    
     if(to.path!=='/freshmanreport') return next()
     let tokenStr=window.sessionStorage.getItem('token')
     if (!tokenStr){

@@ -37,7 +37,10 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
     public StudentDorm getStudentDormInfo(String studentNumber) {
         LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(StudentDorm::getStudentNumber, studentNumber);
-        return studentDormMapper.selectOne(queryWrapper);
+
+        // 使用selectList然后取第一条记录，避免TooManyResultsException
+        List<StudentDorm> dormList = studentDormMapper.selectList(queryWrapper);
+        return dormList.isEmpty() ? null : dormList.get(0);
     }
 
     /**
@@ -77,7 +80,7 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
      * 提交宿舍维修申请
      *
      * @param studentNumber 申请学生的学号
-     * @param dormitory 需要维修的宿舍号
+     * @param dormitory     需要维修的宿舍号
      * @return 返回提交是否成功
      */
     @Override
@@ -97,12 +100,17 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
     public String getDormitoryInfo(String studentNumber) {
         LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(StudentDorm::getStudentNumber, studentNumber);
-        StudentDorm studentDorm = studentDormMapper.selectOne(queryWrapper);
+
+        // 使用selectList然后取第一条记录，避免TooManyResultsException
+        List<StudentDorm> dormList = studentDormMapper.selectList(queryWrapper);
+        StudentDorm studentDorm = dormList.isEmpty() ? null : dormList.get(0);
+
         if (studentDorm != null) {
             return studentDorm.getDormitory();
         }
         return null;
     }
+
     @Override
     public boolean updateStudentDorm(StudentDorm studentDorm) {
         return updateById(studentDorm);

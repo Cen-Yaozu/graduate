@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'InfoView',
@@ -89,11 +89,26 @@ export default {
   methods: {
     async fetchStudentInfo() {
       try {
-        const studentNumber = localStorage.getItem('studentNumber')
-        const response = await axios.get(`/api/student/info/${studentNumber}`)
-        this.studentInfo = response.data
+        const studentNumber = window.sessionStorage.getItem('studentName');
+        if (!studentNumber) {
+          ElMessage.error('未找到学号信息');
+          return;
+        }
+        
+        const response = await this.$http.get(`/api/student/info/${studentNumber}`);
+        // 处理数据
+        this.studentInfo = response.data || {
+          studentNumber: studentNumber,
+          name: '',
+          gender: '',
+          birthDate: '',
+          phone: '',
+          email: '',
+          address: ''
+        };
       } catch (error) {
-        this.$message.error('获取学生信息失败')
+        console.error('获取学生信息失败:', error);
+        ElMessage.error('获取学生信息失败');
       }
     },
     handleEdit() {
@@ -102,11 +117,11 @@ export default {
     },
     async handleSave() {
       try {
-        await axios.put('/api/student/info', this.studentInfo)
-        this.$message.success('保存成功')
+        await this.$http.put('/api/student/info', this.studentInfo)
+        ElMessage.success('保存成功')
         this.isEditing = false
       } catch (error) {
-        this.$message.error('保存失败')
+        ElMessage.error('保存失败')
       }
     },
     handleCancel() {

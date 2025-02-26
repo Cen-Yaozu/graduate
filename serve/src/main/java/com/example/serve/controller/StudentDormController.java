@@ -4,6 +4,7 @@ import com.example.serve.pojo.StudentDorm;
 import com.example.serve.service.StudentDormService;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,18 +18,21 @@ public class StudentDormController {
     private StudentDormService studentDormService;
 
     @GetMapping("/{studentNumber}")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult getDormInfo(@PathVariable String studentNumber) {
         StudentDorm dormInfo = studentDormService.getStudentDormInfo(studentNumber);
         return ResponseResult.okResult(dormInfo);
     }
 
     @GetMapping("/roommates/{studentNumber}")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult getRoommateInfo(@PathVariable String studentNumber) {
         List<Map<String, Object>> roommateList = studentDormService.getRoommateInfo(studentNumber);
         return ResponseResult.okResult(roommateList);
     }
 
     @PostMapping("/repair")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult submitRepair(@RequestBody Map<String, String> repairInfo) {
         String studentNumber = repairInfo.get("studentNumber");
         String dormitory = repairInfo.get("dormitory");

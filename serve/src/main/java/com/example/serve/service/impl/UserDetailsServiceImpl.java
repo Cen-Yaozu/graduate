@@ -1,10 +1,10 @@
 package com.example.serve.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-
 import com.example.serve.mapper.UserMapper;
 import com.example.serve.pojo.LoginUser;
 import com.example.serve.pojo.User;
+import com.example.serve.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,10 +28,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("studentNumber", username);
         User user = userMapper.selectOne(queryWrapper);
+
         // 判断密码是否正确
         if(Objects.isNull(user)){
             throw new RuntimeException("用户名不存在");
         }
+
+
         //权限操作
         List<String> list=userMapper.getAuthoritiesByUserId(user.getId());
 //         返回UserDetails对象

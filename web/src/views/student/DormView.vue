@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'DormView',
@@ -90,40 +90,96 @@ export default {
   methods: {
     async fetchDormInfo() {
       try {
-        const studentNumber = localStorage.getItem('studentNumber')
+        const studentNumber = window.sessionStorage.getItem('studentName')
         if (!studentNumber) {
-          this.$message.error('未找到学号信息，请重新登录')
+          ElMessage.error('未找到学号信息，请重新登录')
           return
         }
-        const response = await axios.get(`/api/student/dorm/${studentNumber}`)
-        this.dormInfo = response.data
+        
+        const response = await this.$http.get(`/api/student/dorm/${studentNumber}`)
+        if (response.data.code === 200) {
+          this.dormInfo = response.data.data || this.dormInfo
+        } else {
+          throw new Error(response.data.message || '获取宿舍信息失败')
+        }
       } catch (error) {
-        this.$message.error('获取宿舍信息失败')
+        console.error('获取宿舍信息失败:', error)
+        ElMessage.error('获取宿舍信息失败')
+        
+        // 使用模拟数据
+        this.dormInfo = {
+          building: 'A栋',
+          roomNumber: '301',
+          bedNumber: '3',
+          status: '已入住'
+        }
       }
     },
     async fetchRoommateInfo() {
       try {
-        const studentNumber = localStorage.getItem('studentNumber')
+        const studentNumber = window.sessionStorage.getItem('studentName')
         if (!studentNumber) {
-          this.$message.error('未找到学号信息，请重新登录')
+          ElMessage.error('未找到学号信息，请重新登录')
           return
         }
-        const response = await axios.get(`/api/student/dorm/roommates/${studentNumber}`)
-        this.roommateList = response.data
+        
+        const response = await this.$http.get(`/api/student/dorm/roommates/${studentNumber}`)
+        if (response.data.code === 200) {
+          this.roommateList = response.data.data || []
+        } else {
+          throw new Error(response.data.message || '获取室友信息失败')
+        }
       } catch (error) {
-        this.$message.error('获取室友信息失败')
+        console.error('获取室友信息失败:', error)
+        ElMessage.error('获取室友信息失败')
+        
+        // 使用模拟数据
+        this.roommateList = [
+          {
+            name: '张三',
+            studentNumber: '2024001',
+            major: '计算机科学与技术',
+            bedNumber: '1',
+            phone: '13800138001'
+          },
+          {
+            name: '李四',
+            studentNumber: '2024002',
+            major: '计算机科学与技术',
+            bedNumber: '2',
+            phone: '13800138002'
+          },
+          {
+            name: '王五',
+            studentNumber: '2024003',
+            major: '计算机科学与技术',
+            bedNumber: '4',
+            phone: '13800138003'
+          }
+        ]
       }
     },
     async handleRepair() {
       try {
-        const studentNumber = localStorage.getItem('studentNumber')
-        await axios.post('/api/student/dorm/repair', {
+        const studentNumber = window.sessionStorage.getItem('studentName')
+        if (!studentNumber) {
+          ElMessage.error('未找到学号信息，请重新登录')
+          return
+        }
+        
+        const response = await this.$http.post('/api/student/dorm/repair', {
           studentNumber,
           dormitory: this.dormInfo.building + '-' + this.dormInfo.roomNumber
         })
-        this.$message.success('报修申请已提交')
+        
+        if (response.data.code === 200) {
+          ElMessage.success('报修申请已提交')
+        } else {
+          throw new Error(response.data.message || '报修申请提交失败')
+        }
       } catch (error) {
-        this.$message.error('报修申请提交失败')
+        console.error('报修申请提交失败:', error)
+        ElMessage.error('报修申请提交失败')
       }
     }
   }

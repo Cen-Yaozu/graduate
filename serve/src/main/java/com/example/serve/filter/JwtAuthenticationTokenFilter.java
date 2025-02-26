@@ -27,48 +27,86 @@ import java.util.Enumeration;
 @Component
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String uri = request.getRequestURI();
         // 放行登录请求和Swagger相关请求
         if (uri.contains("/login") ||
-            uri.contains("/v3/api-docs") ||
-            uri.contains("/swagger-ui") ||
-            uri.contains("/doc.html") ||
-            uri.contains("/webjars") ||
-            uri.contains("/v2/api-docs") ||
-            uri.contains("/swagger-resources")) {
+                uri.contains("/v3/api-docs") ||
+                uri.contains("/swagger-ui") ||
+                uri.contains("/doc.html") ||
+                uri.contains("/webjars") ||
+                uri.contains("/v2/api-docs") ||
+                uri.contains("/swagger-resources")) {
             filterChain.doFilter(request, response);
             return;
         }
+
         // 验证token
-        //String token = request.getHeader("Authorization");
-        String token = "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJlZWY2YzlhYzUxYTM0N2U5Yjk1MGJhZjhjZmViZWU3ZCIsInN1YiI6IntcImFjY291bnROb25FeHBpcmVkXCI6dHJ1ZSxcImFjY291bnROb25Mb2NrZWRcIjp0cnVlLFwiY3JlZGVudGlhbHNOb25FeHBpcmVkXCI6dHJ1ZSxcImVuYWJsZWRcIjp0cnVlLFwibGlzdFwiOltcIlJPTEVfU1RVREVOVFwiXSxcInBhc3N3b3JkXCI6XCJ7bm9vcH0xMjM0NTZcIixcInVzZXJcIjp7XCJpZFwiOjEsXCJwYXNzd29yZFwiOlwie25vb3B9MTIzNDU2XCIsXCJzdHVkZW50TnVtYmVyXCI6XCIyMTQwNzMwMDFcIn0sXCJ1c2VybmFtZVwiOlwiMjE0MDczMDAxXCJ9IiwiaXNzIjoid3UiLCJpYXQiOjE3NDA0ODY0MTksImV4cCI6MTc0MDU3MjgxOX0.52n7g0XA4EJwFVWl6fnalwcIulSFOfswwXLjz2cWd04";
+        String token = request.getHeader("Authorization");
+        // 如果请求头中没有token，也可以从请求参数中获取
         if (!StringUtils.hasText(token)) {
-            throw new RuntimeException("token为空");
+            token = request.getParameter("token");
         }
+
+        if (!StringUtils.hasText(token)) {
+            sendErrorResponse(response, 401, "未提供token或token为空");
+            return;
+        }
+
+        // 去掉Bearer前缀如果存在
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        // 验证token格式
+        if (!isValidJwtFormat(token)) {
+            sendErrorResponse(response, 401, "无效的token格式");
+            return;
+        }
+
         // 校验令牌
         LoginUser loginUser = null;
         try {
             Claims claims = JwtUtil.parseJWT(token);
             String loginUserString = claims.getSubject();
+            if (loginUserString == null) {
+                sendErrorResponse(response, 401, "token中未包含用户信息");
+                return;
+            }
             // 把字符串转换成User对象
             loginUser = JSON.parseObject(loginUserString, LoginUser.class);
-            for (GrantedAuthority authority:loginUser.getAuthorities()){
-                System.out.println("校验令牌"+authority);
+            for (GrantedAuthority authority : loginUser.getAuthorities()) {
+                System.out.println("校验令牌" + authority);
             }
         } catch (Exception e) {
-            if (!response.isCommitted()) {
-                response.setContentType("application/json;charset=UTF-8");
-                PrintWriter out = response.getWriter();
-                out.write("token校验失败");
-                out.flush();
-                out.close();
-            }
+            sendErrorResponse(response, 401, "token校验失败: " + e.getMessage());
             return;
         }
+
         // 把验证完信息放到springSecurtty的上下文
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(loginUser, null, loginUser.getAuthorities());
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(loginUser, null,
+                loginUser.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isValidJwtFormat(String token) {
+        if (token == null) {
+            return false;
+        }
+        // JWT token 应该包含两个点号，分隔成三部分
+        return token.split("\\.").length == 3;
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        if (!response.isCommitted()) {
+            response.setContentType("application/json;charset=UTF-8");
+            response.setStatus(status);
+            PrintWriter out = response.getWriter();
+            out.write(String.format("{\"code\":%d,\"msg\":\"%s\"}", status, message));
+            out.flush();
+            out.close();
+        }
     }
 }

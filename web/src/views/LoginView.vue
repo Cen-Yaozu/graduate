@@ -11,11 +11,8 @@
             <div class="notice-break-line"></div>
             <div class="notice-content">
               <div class="ql-snow">
-                <div id="ql-editor1" class="ql-editor"><p>首次访问请先点击<strong style="color: black;">“</strong>
-                  <a href="http://localhost:8081/activate" style="color: rgb(252 29 29);text-decoration: none"><strong>账号激活</strong></a><strong style="color: black;">”</strong>，设置密码并激活成功后将获取本人学号/工号，之后登录请使用本人学号/工号作为账号，登录密码为账号激活时设置的密码。</p>
-                  <p>如遗忘学号/工号，本科生可使用考生号作为账号登录；</p><p>如遗忘密码，可点击<strong style="color: black;">“</strong>
-                    <a @click.prevent="findpassword=true" style="color: rgb(252 29 29);"><strong>密码找回</strong></a>
-                    <strong style="color: black;">”</strong>,通过信息校验后重置密码。</p><p>平台使用过程中如有任何问题，请致电010-83903297或83906458；</p>
+                <div id="ql-editor1" class="ql-editor"><p>首次访问请先点击<strong style="color: black;">"账号激活"</strong>，设置密码并激活成功后将获取本人学号/工号，之后登录请使用本人学号/工号作为账号，登录密码为账号激活时设置的密码。</p>
+                  <p>如遗忘学号/工号，本科生可使用考生号作为账号登录；</p><p>如遗忘密码，可点击<strong style="color: black;">"密码找回"</strong>,通过信息校验后重置密码。</p><p>平台使用过程中如有任何问题，请致电010-83903297或83906458；</p>
                   <p>本科新生报到其他问题请咨询010-83903097。</p>
                   <p>为了方便您在外网访问内网和图书馆资源，开通了新版VPN，无需安装客户端和插件，支持电脑和手机直接使用，为了获得更好的体验建议使用Chrome、Firefox、IE11、Edge、Safari等浏览器。账号为统一身份认证的用户名和密码。</p></div>
               </div>
@@ -34,6 +31,12 @@
               <div class="content" style="margin-top: 40px">
                 <el-form status-icon ref="loginRef" :model="loginForm" :rules="loginRules"  style="line-height: 38px">
                   <el-space wrap>
+                  <el-form-item>
+                    <el-radio-group v-model="loginForm.role" @change="handleRoleChange">
+                      <el-radio label="STUDENT">学生</el-radio>
+                      <el-radio label="ADMIN">管理员</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
                   <el-form-item prop="username">
                     <el-input v-model="loginForm.studentNumber" placeholder="输入学号" prefix-icon="User" clearable/>
                   </el-form-item>
@@ -99,6 +102,7 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
 
 export default {
   name: "LoginView",
@@ -143,13 +147,12 @@ export default {
       loginForm:{
         studentNumber: '',
         password:'',
-        code: ''
+        code: '',
+        role: 'STUDENT'
       },
       loginRules:{
         studentNumber:[{required:true,message:'请输入用户名',trigger:'blur'}],
         password:[{required:true,message:'请输入密码',trigger:'blur'}]
-        // 验证码相关规则暂时注释
-        // code:[{required:true,message:'请输入验证码',trigger:'blur'}]
       },
       rules:{
         studentNumber:[
@@ -167,35 +170,71 @@ export default {
           { required: true, message: '请填写' },
           { validator: validatePass2, trigger: 'blur' }
         ],
+      },
+      check: {
+        pass: '',
+        checkPass: ''
       }
     }
   },
   methods: {
-    login(){
-        this.$refs.loginRef.validate(async v=>{
-          if(!v) return
-          console.log(this.loginForm)
-          const p ={
-            "studentNumber": this.loginForm.studentNumber,
-            "password": this.loginForm.password
+    handleRoleChange() {
+      this.loginForm.studentNumber = '';
+      this.loginForm.password = '';
+    },
+    async login() {
+      try {
+        if (!this.loginForm.studentNumber || !this.loginForm.password) {
+          ElMessage.warning('请输入用户名和密码');
+          return;
+        }
+        
+        ElMessage.info('正在登录...');
+        
+        // 直接使用真实API登录
+        const { data } = await this.$http.post('/login', {
+          studentNumber: this.loginForm.studentNumber,
+          password: this.loginForm.password,
+          role: this.loginForm.role  // 添加角色信息
+        });
+        
+        console.log('登录响应:', data);
+        
+        if (data.code === 200) {
+          // 存储返回的token和用户角色
+          const token = data.data.token;
+          sessionStorage.setItem('token', token);
+          console.log('保存的token:', token);
+          
+          // 保存角色信息
+          sessionStorage.setItem('role', data.data.auth);
+          // 同时保存不带ROLE_前缀的格式，供路由守卫使用
+          const userRole = data.data.auth === 'ROLE_ADMIN' ? 'ADMIN' : 'STUDENT';
+          sessionStorage.setItem('userRole', userRole);
+          sessionStorage.setItem('studentNumber', data.data.studentNumber);
+          
+          ElMessage.success('登录成功');
+          
+          // 根据角色重定向到不同页面
+          if (data.data.auth === 'ROLE_ADMIN') {
+            this.$router.push('/admin/dashboard');
+          } else {
+            sessionStorage.setItem('studentName', data.data.studentNumber);
+            this.$router.push('/shome');
           }
-          const {data:res}=await this.$http.post('/login',p)
-          console.log(res)
-          window.sessionStorage.setItem('token',res.data.token)
-          console.log(window.sessionStorage.getItem('token'));
-          if (res.code!==200) return this.$message.error(res.data.msg)
-          this.$message.success(res.data.msg)
-          window.sessionStorage.setItem('roles',res.data.auth)
-          window.sessionStorage.setItem('studentName',this.loginForm.studentNumber)
-          // console.log(this.$router);
-          if(res.data.auth==="ROLE_STUDENT"){
-            await this.$router.push('/freshmanreport')
-          }else{
-            await this.$router.push('/')
-          }
-        })
+        } else {
+          ElMessage.error(data.msg || '登录失败，请检查用户名和密码');
+        }
+      } catch (error) {
+        console.error('登录失败', error);
+        ElMessage.error('登录失败: ' + (error.response?.data?.msg || '服务器错误'));
+      }
+    },
+    resetLoginForm() {
+      this.loginForm.studentNumber = '';
+      this.loginForm.password = '';
     }
-  },
+  }
 }
 </script>
 

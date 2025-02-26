@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 
-
 @Service
 public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements LoginService {
 
@@ -32,32 +31,35 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
 
     @Override
     public String login(User user) {
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getStudentNumber(), user.getPassword());
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                user.getStudentNumber(), user.getPassword());
         try {
-            Authentication authenticate = authenticationManager.authenticate(authentication);
-            if(Objects.isNull(authenticate)){
-                throw new RuntimeException("登陆失败");
+            Authentication authenticate = authenticationManager.authenticate(authenticationToken);
+            if (Objects.isNull(authenticate)) {
+                throw new RuntimeException("登录失败");
             }
             LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
-            String loginUserString = JSON.toJSONString(loginUser);
-            String jwt = JwtUtil.createJWT(loginUserString);
-            System.out.println(jwt+"00000");
-//            stringRedisTemplate.opsForValue().set("login:"+loginUser.getUser().getId(), loginUserString);
+            String userJson = JSON.toJSONString(loginUser);
+            String jwt = JwtUtil.createJWT(userJson);
+            System.out.println(jwt + "00000");
+            // stringRedisTemplate.opsForValue().set("login:"+loginUser.getUser().getId(),
+            // userJson);
             return jwt;
-        }catch (Exception e){
+        } catch (Exception e) {
             return e.getMessage();
         }
     }
+
     @Override
-    public User findByUsername(String username){
+    public User findByUsername(String username) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getStudentNumber,username);
+        queryWrapper.eq(User::getStudentNumber, username);
         User user = userMapper.selectOne(queryWrapper);
         return user;
     }
 
     @Override
-    public List<String> getAuthoritiesByUserId(Integer userId){
+    public List<String> getAuthoritiesByUserId(Integer userId) {
         return userMapper.getAuthoritiesByUserId(userId);
     }
 }

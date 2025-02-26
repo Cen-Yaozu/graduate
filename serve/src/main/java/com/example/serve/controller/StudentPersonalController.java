@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * @since 2025-02-23
  */
 @RestController
-@RequestMapping("/api/student")
+@RequestMapping("/api/personal")
 public class StudentPersonalController {
 
     @Autowired
