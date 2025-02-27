@@ -159,6 +159,48 @@ const router=createRouter({
                     name: "admin-students",
                     component: () => import('@/views/admin/StudentManageView.vue'),
                     meta: { title: "学生管理" }
+                },
+                {
+                    path: "payments",
+                    name: "admin-payments",
+                    component: () => import('@/views/admin/PaymentManageView.vue'),
+                    meta: { title: "缴费管理" }
+                },
+                {
+                    path: "classes",
+                    name: "admin-classes",
+                    component: () => import('@/views/admin/ClassManageView.vue'),
+                    meta: { title: "班级管理" }
+                },
+                {
+                    path: "dormitories",
+                    name: "admin-dormitories",
+                    component: () => import('@/views/admin/DormitoryManageView.vue'),
+                    meta: { title: "宿舍管理" }
+                },
+                {
+                    path: "teachers",
+                    name: "admin-teachers",
+                    component: () => import('@/views/admin/TeacherManageView.vue'),
+                    meta: { title: "教师管理" }
+                },
+                {
+                    path: "reports",
+                    name: "admin-reports",
+                    component: () => import('@/views/admin/ReportManageView.vue'),
+                    meta: { title: "报表管理" }
+                },
+                {
+                    path: "calendar",
+                    name: "admin-calendar",
+                    component: () => import('@/views/admin/CalendarManageView.vue'),
+                    meta: { title: "校园日历" }
+                },
+                {
+                    path: "password",
+                    name: "admin-password",
+                    component: () => import('@/views/admin/PasswordView.vue'),
+                    meta: { title: "修改密码" }
                 }
                 // 以下路由组件尚未创建，先注释掉，避免编译错误
                 /*
