@@ -2,6 +2,8 @@ package com.example.serve.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.serve.pojo.Student;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 学生服务接口
@@ -42,4 +44,20 @@ public interface StudentService extends IService<Student> {
      * @return 抵校状态
      */
     Integer getArriveStatus(String studentNumber);
+
+    /**
+     * 获取未分配班级的学生列表
+     * 
+     * @param params 查询参数
+     * @return 结果集
+     */
+    Map<String, Object> getUnassignedStudents(Map<String, Object> params);
+
+    /**
+     * 根据分配状态获取学生列表
+     * 
+     * @param params 查询参数，包含assignType(all/assigned/unassigned)
+     * @return 结果集
+     */
+    Map<String, Object> getStudentsByAssignStatus(Map<String, Object> params);
 }

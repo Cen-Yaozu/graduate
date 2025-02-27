@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 @TableName("classroom")
 public class Classroom {
@@ -27,4 +29,7 @@ public class Classroom {
 
     @TableField("classroomNum")
     private Integer classroomNum; // 班级人数
+    
+    @TableField(exist = false)
+    private Map<String, Object> extraData; // 额外数据，不映射到数据库
 }

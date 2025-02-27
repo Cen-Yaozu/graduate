@@ -143,11 +143,25 @@ public class Student implements Serializable {
      */
     @TableField("dorm_number")
     private String dormNumber;
+    
+    /**
+     * 班级ID
+     */
+    @TableField("classroom_id")
+    private Integer classroomId;
 
     public Integer getArriveStatus() {
         return arriveStatus;
     }
     public void setArriveStatus(Integer arriveStatus) {
         this.arriveStatus = arriveStatus;
+    }
+    
+    public Integer getClassroomId() {
+        return classroomId;
+    }
+    
+    public void setClassroomId(Integer classroomId) {
+        this.classroomId = classroomId;
     }
 }

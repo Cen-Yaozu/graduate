@@ -7,7 +7,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 学生宿舍信息实体类
+ * 学生宿舍关联实体类
  *
  * @author author
  * @since 2025-02-23
@@ -33,7 +33,6 @@ public class StudentDorm implements Serializable {
     /**
      * 院系
      */
-    @TableField("department")
     private String department;
 
     /**
@@ -43,7 +42,7 @@ public class StudentDorm implements Serializable {
     private String dormType;
 
     /**
-     * 宿舍号
+     * 宿舍楼
      */
     @TableField("dormitory")
     private String dormitory;
