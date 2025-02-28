@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.student;
 
 import com.example.serve.pojo.Arrive;
 import com.example.serve.service.ArriveService;
@@ -18,7 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/arrive")
-public class ArriveController {
+public class StudentArriveController {
 
     @Autowired
     private StudentService studentService;

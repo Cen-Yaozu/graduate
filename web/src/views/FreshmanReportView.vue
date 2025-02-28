@@ -13,8 +13,22 @@
        <el-menu-item index="0" >
         <img src="../assets/img/logo.png" style="height: auto; max-width: 100%">
        </el-menu-item>
-        <div class="user-avatar" @click="toAdmin">
-          <el-avatar :size="40" :icon="UserFilled" />
+        <div class="user-avatar">
+          <el-dropdown trigger="click">
+            <span class="el-dropdown-link">
+              <el-avatar :size="40" :icon="UserFilled" />
+              <el-icon class="el-icon--right">
+                <arrow-down />
+              </el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item>{{ studentNumber }}</el-dropdown-item>
+                <el-dropdown-item divided @click="toStudentHome">个人管理</el-dropdown-item>
+                <el-dropdown-item @click="handleLogout">退出系统</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-menu>
      </el-header>
@@ -61,7 +75,8 @@
 
  <script>
 import router from "@/router";
-import { UserFilled } from '@element-plus/icons-vue';
+import { UserFilled, ArrowDown } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: "FreshmanReportView",
@@ -70,7 +85,9 @@ export default {
       isPlaying:false,
       activeName:'first',
       activeIndex:"1",
-      UserFilled
+      UserFilled,
+      ArrowDown,
+      studentNumber: window.sessionStorage.getItem('studentNumber') || '未知用户'
     }
   },
   methods:{
@@ -83,12 +100,34 @@ export default {
     toreport(){
       router.push('/freshman')
     },
+    toStudentHome() {
+      router.push('/shome');
+    },
+    handleLogout() {
+      // 清除会话存储中的所有信息
+      window.sessionStorage.removeItem('token');
+      window.sessionStorage.removeItem('role');
+      window.sessionStorage.removeItem('userRole');
+      window.sessionStorage.removeItem('studentNumber');
+      window.sessionStorage.removeItem('studentName');
+      
+      ElMessage.success('已成功退出系统');
+      
+      // 跳转到登录页
+      router.push('/login');
+    },
     toAdmin(){
-      const role = window.sessionStorage.getItem('roles')
-      if(role === 'ROLE_STUDENT') {
-        router.push('/shome')
+      // 检查两种可能的角色存储
+      const userRole = window.sessionStorage.getItem('userRole');
+      const role = window.sessionStorage.getItem('role');
+      
+      // 判断角色并跳转
+      if(userRole === 'STUDENT' || role === 'ROLE_STUDENT') {
+        router.push('/shome');
+      } else if(userRole === 'ADMIN' || role === 'ROLE_ADMIN') {
+        router.push('/admin/dashboard');
       } else {
-        router.push('/ahome')
+        router.push('/login');
       }
     }
   }
@@ -150,18 +189,29 @@ export default {
   display: flex;
   align-items: center;
   margin-right: 20px;
-  cursor: pointer;
   height: 80px;
+}
+
+.el-dropdown-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .user-avatar .el-avatar {
   background-color: #fff;
   color: #244cb2;
+  margin-right: 5px;
   transition: transform 0.3s;
 }
 
 .user-avatar:hover .el-avatar {
   transform: scale(1.1);
+}
+
+/* 下拉菜单箭头颜色 */
+.el-icon--right {
+  color: white;
 }
 
 /*box*/

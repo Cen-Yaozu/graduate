@@ -185,18 +185,6 @@ const router=createRouter({
                     meta: { title: "教师管理" }
                 },
                 {
-                    path: "reports",
-                    name: "admin-reports",
-                    component: () => import('@/views/admin/ReportManageView.vue'),
-                    meta: { title: "报表管理" }
-                },
-                {
-                    path: "calendar",
-                    name: "admin-calendar",
-                    component: () => import('@/views/admin/CalendarManageView.vue'),
-                    meta: { title: "校园日历" }
-                },
-                {
                     path: "password",
                     name: "admin-password",
                     component: () => import('@/views/admin/PasswordView.vue'),
@@ -267,11 +255,14 @@ router.beforeEach((to,from,next)=>{
         }
     }
     
-    if(to.path!=='/freshmanreport') return next()
-    let tokenStr=window.sessionStorage.getItem('token')
-    if (!tokenStr){
-        return next('/login')
+    // 需要登录权限的页面
+    if (to.path === '/freshmanreport' || to.path === '/shome' || to.path.startsWith('/admin')) {
+        let tokenStr = window.sessionStorage.getItem('token');
+        if (!tokenStr) {
+            return next('/login');
+        }
     }
-    next()
+    
+    next();
 })
 export default router;

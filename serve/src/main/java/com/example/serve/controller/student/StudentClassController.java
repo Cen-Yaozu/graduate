@@ -1,16 +1,15 @@
-package com.example.serve.controller;
+package com.example.serve.controller.student;
 
+import com.example.serve.controller.BaseController;
 import com.example.serve.service.ClassService;
-import com.example.serve.util.JsonResult;
 import com.example.serve.tools.ResponseResult;
 
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/student/class")
-public class ClassController extends BaseController {
+public class StudentClassController extends BaseController {
 
     @Autowired
     private ClassService classService;

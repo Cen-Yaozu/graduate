@@ -1,12 +1,10 @@
-package com.example.serve.controller;
+package com.example.serve.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.serve.pojo.Classroom;
 import com.example.serve.pojo.Major;
-import com.example.serve.pojo.Student;
 import com.example.serve.service.ClassroomService;
 import com.example.serve.service.MajorService;
 import com.example.serve.service.StudentService;

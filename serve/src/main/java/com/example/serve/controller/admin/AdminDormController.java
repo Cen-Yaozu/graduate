@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.admin;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.serve.common.Result;
@@ -6,15 +6,18 @@ import com.example.serve.pojo.Dorm;
 import com.example.serve.pojo.Student;
 import com.example.serve.service.DormService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/dorm")
-public class DormController {
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminDormController {
 
     @Autowired
     private DormService dormService;
@@ -99,11 +102,36 @@ public class DormController {
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
             @RequestParam(required = false) Integer classroomId) {
-        IPage<Student> pageResult = dormService.getUnassignedStudents(page, size, department, majorname, classroomId);
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", pageResult.getRecords());
-        data.put("total", pageResult.getTotal());
-        return Result.success(data);
+        try {
+            System.out.println("查询未分配学生参数: page=" + page + ", size=" + size +
+                    ", department=" + department + ", majorname=" + majorname +
+                    ", classroomId=" + classroomId);
+
+            IPage<Student> pageResult = dormService.getUnassignedStudents(page, size, department, majorname,
+                    classroomId);
+
+            // 确保返回的学生数据包含完整字段
+            List<Student> enhancedStudents = new ArrayList<>();
+            for (Student student : pageResult.getRecords()) {
+                // 打印每个学生对象的姓名和性别字段，检查是否为空
+                System.out.println("学生数据: id=" + student.getId() +
+                        ", 学号=" + student.getStudentNumber() +
+                        ", 姓名=" + (student.getStudentName() != null ? student.getStudentName() : "null") +
+                        ", 性别=" + (student.getSex() != null ? student.getSex() : "null"));
+                enhancedStudents.add(student);
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("list", enhancedStudents);
+            data.put("total", pageResult.getTotal());
+
+            System.out.println("查询到的未分配学生数量: " + enhancedStudents.size());
+            return Result.success(data);
+        } catch (Exception e) {
+            System.err.println("获取未分配学生失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("获取未分配学生失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -159,8 +187,19 @@ public class DormController {
             @RequestParam(required = false) String dormType,
             @RequestParam(required = false) String dormsex,
             @RequestParam(required = false) String dormitory) {
-        List<Dorm> dorms = dormService.getAvailableDorms(dormType, dormsex, dormitory);
-        return Result.success(dorms);
+        try {
+            System.out.println("查询宿舍参数: 类型=" + dormType + ", 性别=" + dormsex + ", 宿舍楼=" + dormitory);
+            List<Dorm> dorms = dormService.getAvailableDorms(dormType, dormsex, dormitory);
+            System.out.println("查询到的宿舍数量: " + (dorms != null ? dorms.size() : "null"));
+            if (dorms == null || dorms.isEmpty()) {
+                return Result.success(new ArrayList<>());
+            }
+            return Result.success(dorms);
+        } catch (Exception e) {
+            System.err.println("获取可用宿舍失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("获取可用宿舍失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -170,11 +209,11 @@ public class DormController {
     public Result batchAssignStudentsToDorm(@RequestBody Map<String, Object> params) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> assignments = (List<Map<String, Object>>) params.get("assignments");
-        
+
         if (assignments == null || assignments.isEmpty()) {
             return Result.error("参数错误");
         }
-        
+
         boolean success = dormService.batchAssignStudentsToDorm(assignments);
         return success ? Result.success() : Result.error("批量分配失败，请检查宿舍容量");
     }
@@ -184,11 +223,18 @@ public class DormController {
      */
     @GetMapping("/filter-options")
     public Result getFilterOptions() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("departments", dormService.getAllDepartments());
-        data.put("majors", dormService.getAllMajors());
-        data.put("classrooms", dormService.getAllClassrooms());
-        return Result.success(data);
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("departments", dormService.getAllDepartments());
+            data.put("majors", dormService.getAllMajors());
+            data.put("classrooms", dormService.getAllClassrooms());
+            System.out.println("获取筛选选项成功: " + data);
+            return Result.success(data);
+        } catch (Exception e) {
+            System.err.println("获取筛选选项失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("获取筛选选项失败");
+        }
     }
 
     /**
@@ -197,12 +243,12 @@ public class DormController {
     @PostMapping("/remove-student")
     public Result removeStudentFromDorm(@RequestBody Map<String, Object> params) {
         String studentNumber = (String) params.get("studentNumber");
-        
+
         if (studentNumber == null) {
             return Result.error("参数错误");
         }
-        
+
         boolean success = dormService.removeStudentFromDorm(studentNumber);
         return success ? Result.success() : Result.error("移除学生失败");
     }
-} 
+}

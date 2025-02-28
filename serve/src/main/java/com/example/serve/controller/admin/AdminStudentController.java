@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;

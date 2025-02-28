@@ -35,14 +35,6 @@
             <el-icon><el-icon-user /></el-icon>
             <span>教师管理</span>
           </el-menu-item>
-          <el-menu-item index="/admin/reports">
-            <el-icon><el-icon-document /></el-icon>
-            <span>报表管理</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/calendar">
-            <el-icon><el-icon-calendar /></el-icon>
-            <span>校园日历</span>
-          </el-menu-item>
           <el-menu-item index="/admin/password">
             <el-icon><el-icon-key /></el-icon>
             <span>修改密码</span>
@@ -76,6 +68,7 @@
 <script>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'AdminLayout',
@@ -88,8 +81,16 @@ export default {
     })
 
     const handleLogout = () => {
+      // 清除会话存储中的所有信息
       window.sessionStorage.removeItem('token')
+      window.sessionStorage.removeItem('role')
       window.sessionStorage.removeItem('userRole')
+      window.sessionStorage.removeItem('studentNumber')
+      window.sessionStorage.removeItem('studentName')
+      
+      ElMessage.success('已成功退出系统')
+      
+      // 跳转到登录页
       router.push('/login')
     }
 

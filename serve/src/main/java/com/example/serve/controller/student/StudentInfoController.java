@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.student;
 
 import com.example.serve.command.StudentInfoCommand;
 import com.example.serve.pojo.Family;

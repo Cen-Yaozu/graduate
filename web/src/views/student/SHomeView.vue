@@ -59,9 +59,9 @@
       </el-icon>
     </span>
             <template #dropdown>
-              <el-dropdown-menu >
-                <el-dropdown-item>用户名</el-dropdown-item>
-                <el-dropdown-item divided>退出</el-dropdown-item>
+              <el-dropdown-menu>
+                <el-dropdown-item>{{ studentNumber }}</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">退出</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -75,13 +75,36 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus';
+import router from '@/router';
+import { Calendar, User, House, Money, School, Location, Expand, Fold, ArrowDown } from '@element-plus/icons-vue';
+
 export default {
 name: "SHomeView",
   data(){
   return{
     isCollapse:false,
     circleUrl: "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png",
+    studentNumber: window.sessionStorage.getItem('studentNumber') || '未知用户'
   }
+  },
+  components: {
+    Calendar, User, House, Money, School, Location, Expand, Fold, ArrowDown
+  },
+  methods: {
+    handleLogout() {
+      // 清除会话存储中的所有信息
+      window.sessionStorage.removeItem('token');
+      window.sessionStorage.removeItem('role');
+      window.sessionStorage.removeItem('userRole');
+      window.sessionStorage.removeItem('studentNumber');
+      window.sessionStorage.removeItem('studentName');
+      
+      ElMessage.success('已成功退出系统');
+      
+      // 跳转到登录页
+      router.push('/login');
+    }
   }
 }
 </script>

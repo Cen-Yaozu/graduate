@@ -1,67 +1,81 @@
 <template>
   <div class="teacher-manage">
-    <el-card class="box-card">
-      <template #header>
-        <div class="card-header">
-          <span>教师管理</span>
-          <el-button type="primary" @click="handleAdd">添加教师</el-button>
-        </div>
-      </template>
+    <div class="header">
+      <h2>教师管理</h2>
+      <el-button type="primary" @click="handleAdd">添加教师</el-button>
+    </div>
 
-      <!-- 搜索栏 -->
-      <div class="search-bar">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="请输入教师姓名/工号进行搜索"
-          class="search-input"
-          clearable
-          @clear="handleSearch"
-          @keyup.enter="handleSearch"
-        >
-          <template #append>
-            <el-button @click="handleSearch">
-              <el-icon><Search /></el-icon>
-            </el-button>
-          </template>
-        </el-input>
+    <!-- 搜索栏 -->
+    <div class="search-container">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="请输入教师姓名/工号进行搜索"
+        class="search-input"
+        clearable
+        @clear="handleSearch"
+        @keyup.enter="handleSearch"
+      >
+        <template #append>
+          <el-button @click="handleSearch">
+            <el-icon><Search /></el-icon>
+          </el-button>
+        </template>
+      </el-input>
+    </div>
+
+    <!-- 表格部分 -->
+    <div class="table-container">
+      <!-- 表头 -->
+      <div class="table-header">
+        <div class="header-item id-col">工号</div>
+        <div class="header-item name-col">姓名</div>
+        <div class="header-item phone-col">联系电话</div>
+        <div class="header-item action-col">操作</div>
       </div>
 
-      <!-- 教师列表 -->
-      <el-table :data="teacherList" style="width: 100%" v-loading="loading">
-        <el-table-column prop="teacherNumber" label="工号" width="120" />
-        <el-table-column prop="teacherName" label="姓名" width="120" />
-        <el-table-column prop="gender" label="性别" width="80">
-          <template #default="scope">
-            {{ scope.row.gender === 1 ? '男' : '女' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="department" label="所属院系" width="150" />
-        <el-table-column prop="title" label="职称" width="120" />
-        <el-table-column prop="phone" label="联系电话" width="150" />
-        <el-table-column prop="email" label="邮箱" width="200" />
-        <el-table-column label="操作" width="200">
-          <template #default="scope">
-            <el-button-group>
-              <el-button type="primary" @click="handleEdit(scope.row)" size="small">编辑</el-button>
-              <el-button type="danger" @click="handleDelete(scope.row)" size="small">删除</el-button>
-            </el-button-group>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 表格内容 -->
+      <div v-loading="loading" class="table-body">
+        <div v-for="item in teacherList" :key="item.teacherNumber" class="table-row">
+          <div class="cell id-col">{{ item.teacherNumber }}</div>
+          <div class="cell name-col">{{ item.teacherName }}</div>
+          <div class="cell phone-col">{{ item.teacherPhone }}</div>
+          <div class="cell action-col">
+            <el-button type="primary" size="small" @click="handleEdit(item)">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(item)">删除</el-button>
+          </div>
+        </div>
+        <div v-if="teacherList.length === 0 && !loading" class="empty-data">
+          暂无数据
+        </div>
+      </div>
 
       <!-- 分页 -->
       <div class="pagination-container">
+        <div class="pagination-info">
+          共 {{ total }} 条
+        </div>
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
+          background
+          layout="sizes, prev, pager, next, jumper"
           :total="total"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
+        <div class="pagination-jumper">
+          前往
+          <el-input 
+            v-model="jumpPage" 
+            @keyup.enter="handleJumpPage"
+            size="small"
+            class="page-jump-input"
+          ></el-input>
+          页
+        </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 添加/编辑教师对话框 -->
     <el-dialog
@@ -71,28 +85,13 @@
     >
       <el-form :model="teacherForm" :rules="rules" ref="teacherFormRef" label-width="100px">
         <el-form-item label="工号" prop="teacherNumber">
-          <el-input v-model="teacherForm.teacherNumber" placeholder="请输入工号" />
+          <el-input v-model="teacherForm.teacherNumber" placeholder="请输入工号" :disabled="dialogType === 'edit'" />
         </el-form-item>
         <el-form-item label="姓名" prop="teacherName">
           <el-input v-model="teacherForm.teacherName" placeholder="请输入姓名" />
         </el-form-item>
-        <el-form-item label="性别" prop="gender">
-          <el-radio-group v-model="teacherForm.gender">
-            <el-radio :label="1">男</el-radio>
-            <el-radio :label="2">女</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="所属院系" prop="department">
-          <el-input v-model="teacherForm.department" placeholder="请输入所属院系" />
-        </el-form-item>
-        <el-form-item label="职称" prop="title">
-          <el-input v-model="teacherForm.title" placeholder="请输入职称" />
-        </el-form-item>
-        <el-form-item label="联系电话" prop="phone">
-          <el-input v-model="teacherForm.phone" placeholder="请输入联系电话" />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="teacherForm.email" placeholder="请输入邮箱" />
+        <el-form-item label="联系电话" prop="teacherPhone">
+          <el-input v-model="teacherForm.teacherPhone" placeholder="请输入联系电话" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -109,6 +108,34 @@
 import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
+
+// API基础路径
+const baseURL = '/api/admin/teacher'
+
+// 定义API请求函数
+const api = {
+  // 获取教师列表
+  getTeacherPage(params) {
+    return axios.get(`${baseURL}/page`, { params })
+  },
+  // 根据ID获取教师
+  getTeacherById(id) {
+    return axios.get(`${baseURL}/${id}`)
+  },
+  // 添加教师
+  addTeacher(data) {
+    return axios.post(baseURL, data)
+  },
+  // 更新教师
+  updateTeacher(data) {
+    return axios.put(baseURL, data)
+  },
+  // 删除教师
+  deleteTeacher(id) {
+    return axios.delete(`${baseURL}/${id}`)
+  }
+}
 
 // 数据列表
 const teacherList = ref([])
@@ -117,6 +144,7 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchKeyword = ref('')
+const jumpPage = ref('')
 
 // 对话框相关
 const dialogVisible = ref(false)
@@ -125,24 +153,16 @@ const teacherFormRef = ref(null)
 const teacherForm = ref({
   teacherNumber: '',
   teacherName: '',
-  gender: 1,
-  department: '',
-  title: '',
-  phone: '',
-  email: ''
+  teacherPhone: ''
 })
 
 // 表单验证规则
 const rules = {
   teacherNumber: [{ required: true, message: '请输入工号', trigger: 'blur' }],
   teacherName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-  gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-  department: [{ required: true, message: '请输入所属院系', trigger: 'blur' }],
-  title: [{ required: true, message: '请输入职称', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  teacherPhone: [
+    { required: true, message: '请输入联系电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ]
 }
 
@@ -150,17 +170,24 @@ const rules = {
 const getTeacherList = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端API获取教师列表
-    // const res = await getTeacherListAPI({
-    //   page: currentPage.value,
-    //   size: pageSize.value,
-    //   keyword: searchKeyword.value
-    // })
-    // teacherList.value = res.data.list
-    // total.value = res.data.total
+    const res = await api.getTeacherPage({
+      current: currentPage.value,
+      size: pageSize.value,
+      keyword: searchKeyword.value
+    })
+    if (res.data.code === 200) {
+      teacherList.value = res.data.data.records
+      total.value = res.data.data.total
+    } else {
+      ElMessage.error(res.data.msg || '获取教师列表失败')
+    }
   } catch (error) {
     console.error('获取教师列表失败：', error)
-    ElMessage.error('获取教师列表失败')
+    if (error.response && error.response.status === 401) {
+      ElMessage.error('未授权，请重新登录')
+    } else {
+      ElMessage.error('获取教师列表失败')
+    }
   } finally {
     loading.value = false
   }
@@ -183,17 +210,25 @@ const handleCurrentChange = (val) => {
   getTeacherList()
 }
 
+// 页码跳转
+const handleJumpPage = () => {
+  const page = parseInt(jumpPage.value)
+  if (page && page > 0 && page <= Math.ceil(total.value / pageSize.value)) {
+    currentPage.value = page
+    getTeacherList()
+  } else {
+    ElMessage.warning('请输入有效的页码')
+  }
+  jumpPage.value = ''
+}
+
 // 添加教师
 const handleAdd = () => {
   dialogType.value = 'add'
   teacherForm.value = {
     teacherNumber: '',
     teacherName: '',
-    gender: 1,
-    department: '',
-    title: '',
-    phone: '',
-    email: ''
+    teacherPhone: ''
   }
   dialogVisible.value = true
 }
@@ -213,14 +248,23 @@ const handleDelete = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      // TODO: 调用后端API删除教师
-      // await deleteTeacherAPI(row.id)
-      ElMessage.success('删除成功')
-      getTeacherList()
+      const res = await api.deleteTeacher(row.teacherNumber)
+      if (res.data.code === 200) {
+        ElMessage.success('删除成功')
+        getTeacherList()
+      } else {
+        ElMessage.error(res.data.msg || '删除教师失败')
+      }
     } catch (error) {
       console.error('删除教师失败：', error)
-      ElMessage.error('删除教师失败')
+      if (error.response && error.response.status === 401) {
+        ElMessage.error('未授权，请重新登录')
+      } else {
+        ElMessage.error('删除教师失败')
+      }
     }
+  }).catch(() => {
+    // 用户取消删除操作
   })
 }
 
@@ -231,18 +275,27 @@ const handleSubmit = async () => {
   await teacherFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端API提交表单
-        // if (dialogType.value === 'add') {
-        //   await addTeacherAPI(teacherForm.value)
-        // } else {
-        //   await updateTeacherAPI(teacherForm.value)
-        // }
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        getTeacherList()
+        let res
+        if (dialogType.value === 'add') {
+          res = await api.addTeacher(teacherForm.value)
+        } else {
+          res = await api.updateTeacher(teacherForm.value)
+        }
+        
+        if (res.data.code === 200) {
+          ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
+          dialogVisible.value = false
+          getTeacherList()
+        } else {
+          ElMessage.error(res.data.msg || '提交失败')
+        }
       } catch (error) {
         console.error('提交表单失败：', error)
-        ElMessage.error('提交失败')
+        if (error.response && error.response.status === 401) {
+          ElMessage.error('未授权，请重新登录')
+        } else {
+          ElMessage.error('提交失败')
+        }
       }
     }
   })
@@ -256,25 +309,149 @@ onMounted(() => {
 <style scoped>
 .teacher-manage {
   padding: 20px;
+  background-color: #f8f8f8;
+  min-height: calc(100vh - 60px);
 }
 
-.card-header {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.search-bar {
-  margin-bottom: 20px;
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.search-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
 }
 
 .search-input {
-  width: 300px;
+  width: 320px;
+}
+
+.table-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 表格样式 */
+.table-header {
+  display: flex;
+  background-color: #f5f7fa;
+  border-top: 1px solid #ebeef5;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.header-item {
+  padding: 12px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 500;
+  color: #606266;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.table-row:hover {
+  background-color: #f5f7fa;
+}
+
+.cell {
+  padding: 12px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: #606266;
+}
+
+/* 列宽设置 */
+.id-col {
+  flex: 1;
+  max-width: 120px;
+}
+
+.name-col {
+  flex: 2;
+  max-width: 180px;
+}
+
+.phone-col {
+  flex: 2;
+  max-width: 180px;
+}
+
+.action-col {
+  flex: 2;
+  min-width: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-col .el-button {
+  margin: 0 5px;
+}
+
+.empty-data {
+  padding: 40px 0;
+  text-align: center;
+  color: #909399;
 }
 
 .pagination-container {
   margin-top: 20px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-info {
+  color: #606266;
+  font-size: 14px;
+}
+
+.pagination-jumper {
+  display: flex;
+  align-items: center;
+  color: #606266;
+  font-size: 14px;
+}
+
+.page-jump-input {
+  width: 50px;
+  margin: 0 5px;
+}
+
+:deep(.el-button) {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+:deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: #409eff;
+}
+
+:deep(.el-input__inner) {
+  height: 36px;
 }
 </style>

@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.student;
 
 import com.example.serve.pojo.PayItem;
 import com.example.serve.service.PaymentService;
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api")
-public class PaymentController {
+public class StudentPaymentController {
 
     @Autowired
     private PaymentService paymentService;

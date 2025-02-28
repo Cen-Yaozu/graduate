@@ -31,14 +31,8 @@
               <div class="content" style="margin-top: 40px">
                 <el-form status-icon ref="loginRef" :model="loginForm" :rules="loginRules"  style="line-height: 38px">
                   <el-space wrap>
-                  <el-form-item>
-                    <el-radio-group v-model="loginForm.role" @change="handleRoleChange">
-                      <el-radio label="STUDENT">学生</el-radio>
-                      <el-radio label="ADMIN">管理员</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
                   <el-form-item prop="username">
-                    <el-input v-model="loginForm.studentNumber" placeholder="输入学号" prefix-icon="User" clearable/>
+                    <el-input v-model="loginForm.studentNumber" placeholder="输入学号/工号" prefix-icon="User" clearable/>
                   </el-form-item>
                   <el-form-item prop="password">
                     <el-input v-model="loginForm.password" prefix-icon="Lock" clearable type="password"/>
@@ -178,10 +172,6 @@ export default {
     }
   },
   methods: {
-    handleRoleChange() {
-      this.loginForm.studentNumber = '';
-      this.loginForm.password = '';
-    },
     async login() {
       try {
         if (!this.loginForm.studentNumber || !this.loginForm.password) {
@@ -195,7 +185,7 @@ export default {
         const { data } = await this.$http.post('/login', {
           studentNumber: this.loginForm.studentNumber,
           password: this.loginForm.password,
-          role: this.loginForm.role  // 添加角色信息
+          role: this.loginForm.role
         });
         
         console.log('登录响应:', data);
@@ -220,7 +210,7 @@ export default {
             this.$router.push('/admin/dashboard');
           } else {
             sessionStorage.setItem('studentName', data.data.studentNumber);
-            this.$router.push('/shome');
+            this.$router.push('/freshmanreport');
           }
         } else {
           ElMessage.error(data.msg || '登录失败，请检查用户名和密码');

@@ -1,4 +1,4 @@
-package com.example.serve.controller;
+package com.example.serve.controller.student;
 
 import com.example.serve.pojo.StudentDorm;
 import com.example.serve.service.StudentDormService;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/dormitory")
-public class DormitoryController {
+public class StudentDormitoryController {
 
     @Autowired
     private StudentDormService studentDormService;
