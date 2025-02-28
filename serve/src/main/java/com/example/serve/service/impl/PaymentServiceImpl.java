@@ -85,6 +85,7 @@ public class PaymentServiceImpl implements PaymentService {
             return false;
         }
     }
+
     @Override
     public boolean payForItem(Integer studentNumber, String amountcard, String method) {
         try {
@@ -105,6 +106,27 @@ public class PaymentServiceImpl implements PaymentService {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * 根据学号查询缴费记录
+     *
+     * @param studentNumber 学生学号
+     * @return 缴费记录
+     */
+    @Override
+    public PayItem getPayItemByStudentNumber(String studentNumber) {
+        try {
+            LambdaQueryWrapper<PayItem> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(PayItem::getStudentNumber, studentNumber);
+            // 使用缴费编号字段排序，获取最新的记录
+            queryWrapper.orderByDesc(PayItem::getAmountcard);
+            List<PayItem> records = paymentItemMapper.selectList(queryWrapper);
+            return records != null && !records.isEmpty() ? records.get(0) : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

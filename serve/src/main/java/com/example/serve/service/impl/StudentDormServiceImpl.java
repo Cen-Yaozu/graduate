@@ -115,4 +115,30 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
     public boolean updateStudentDorm(StudentDorm studentDorm) {
         return updateById(studentDorm);
     }
+
+    /**
+     * 保存学生宿舍信息
+     *
+     * @param studentDorm 学生宿舍信息
+     * @return 保存是否成功
+     */
+    @Override
+    public boolean save(StudentDorm studentDorm) {
+        try {
+            // 检查是否已存在记录
+            StudentDorm existingDorm = getStudentDormInfo(studentDorm.getStudentNumber());
+            if (existingDorm != null) {
+                // 已存在则更新
+                studentDorm.setStudentNumber(existingDorm.getStudentNumber());
+                return updateStudentDorm(studentDorm);
+            } else {
+                // 不存在则插入
+                int result = studentDormMapper.insert(studentDorm);
+                return result > 0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

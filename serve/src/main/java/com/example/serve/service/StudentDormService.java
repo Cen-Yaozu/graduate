@@ -41,7 +41,7 @@ public interface StudentDormService extends IService<StudentDorm> {
      * 提交报修请求
      *
      * @param studentNumber 学号
-     * @param dormitory 宿舍号
+     * @param dormitory     宿舍号
      * @return 是否提交成功
      */
     boolean submitRepairRequest(String studentNumber, String dormitory);
@@ -53,4 +53,12 @@ public interface StudentDormService extends IService<StudentDorm> {
      * @return 宿舍信息
      */
     String getDormitoryInfo(String studentNumber);
+
+    /**
+     * 保存学生宿舍信息
+     *
+     * @param studentDorm 学生宿舍信息
+     * @return 保存是否成功
+     */
+    boolean save(StudentDorm studentDorm);
 }

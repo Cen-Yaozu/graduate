@@ -35,7 +35,7 @@
           <el-table :data="filteredFastTrackPayments" style="width: 100%; margin-top: 20px" :resize-observer="false">
             <el-table-column prop="studentNumber" label="学号" width="120" />
             <el-table-column prop="studentName" label="姓名" width="120" />
-            <el-table-column prop="major" label="专业" width="180" />
+            <el-table-column prop="major" label="类型" width="180" />
             <el-table-column prop="paymentItem" label="缴费项目" />
             <el-table-column prop="amount" label="金额" width="120">
               <template #default="scope">
@@ -45,7 +45,7 @@
             <el-table-column prop="deadline" label="截止日期" width="120" />
             <el-table-column prop="status" label="状态" width="120">
               <template #default="scope">
-                <el-tag :type="scope.row.status === '已支付' ? 'success' : 'danger'">
+                <el-tag :type="scope.row.status === '已激活' || scope.row.status === '已支付' ? 'success' : 'danger'">
                   {{ scope.row.status }}
                 </el-tag>
               </template>
@@ -208,7 +208,18 @@ export default {
       try {
         const response = await this.$http.get('/api/student/payment/fasttrack')
         if (response.data.code === 200) {
-          this.fastTrackPayments = response.data.data || []
+          // 对后端返回的数据进行字段映射转换
+          const mappedData = (response.data.data || []).map(item => ({
+            studentNumber: item.studentNumber,
+            studentName: item.studentName,
+            major: item.hallway || '直通车', // 使用hallway字段作为类型
+            paymentItem: '学费', // 设置默认缴费项目
+            amount: item.allmoney || parseInt(item.amountcard) || 0, // 尝试获取正确的金额值
+            deadline: '', // 设置默认截止日期
+            status: item.indentStatus || '未支付', // 直接使用indentStatus作为状态
+            paymentDate: '' // 设置默认缴费日期
+          }));
+          this.fastTrackPayments = mappedData;
         } else {
           throw new Error(response.data.message || '获取直通车缴费数据失败')
         }

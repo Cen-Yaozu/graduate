@@ -87,7 +87,7 @@ public class Student implements Serializable {
     private String zipCode;
     /**
      * 
-        电话
+     * 电话
      */
     @TableField("studentPhone")
     private String studentPhone;
@@ -143,25 +143,40 @@ public class Student implements Serializable {
      */
     @TableField("dorm_number")
     private String dormNumber;
-    
+
     /**
      * 班级ID
      */
     @TableField("classroom_id")
     private Integer classroomId;
 
+    /**
+     * 心仪宿舍间（宿舍类型）
+     */
+    @TableField("selectDorm")
+    private String selectDorm;
+
     public Integer getArriveStatus() {
         return arriveStatus;
     }
+
     public void setArriveStatus(Integer arriveStatus) {
         this.arriveStatus = arriveStatus;
     }
-    
+
     public Integer getClassroomId() {
         return classroomId;
     }
-    
+
     public void setClassroomId(Integer classroomId) {
         this.classroomId = classroomId;
+    }
+
+    public String getSelectDorm() {
+        return selectDorm;
+    }
+
+    public void setSelectDorm(String selectDorm) {
+        this.selectDorm = selectDorm;
     }
 }

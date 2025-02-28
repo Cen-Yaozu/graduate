@@ -14,7 +14,6 @@
       <el-menu-item index="2"><router-link to="/life">生活指南</router-link> </el-menu-item>
       <el-menu-item index="3"><router-link to="/hot">热点问题</router-link> </el-menu-item>
       <el-menu-item index="4"><router-link to="/report">新生报道</router-link> </el-menu-item>
-      <el-menu-item index="5"><router-link to="/admin">后台管理</router-link> </el-menu-item>
     </el-menu>
   </el-header>
   <el-main>
@@ -25,7 +24,7 @@
         </td>
       </tr>
       </tbody></table>
-    <div align="center" style="font-size:26px;color:red;">提示：点击上方“新生报到”后，请阅读页面左侧“新生须知”，先完成<span style="    font-weight: bold;">账号激活</span>！<br>激活完成后使用系统生成学号重新登录，进行后续信息采集和学费缴纳。</div>
+    <div align="center" style="font-size:26px;color:red;">提示：点击上方"新生报到"后，请阅读页面左侧"新生须知"，先完成<span style="    font-weight: bold;">账号激活</span>！<br>激活完成后使用系统生成学号重新登录，进行后续信息采集和学费缴纳。</div>
   </el-main>
 </template>
 

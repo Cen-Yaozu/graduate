@@ -58,14 +58,22 @@ public interface PaymentService {
      * @return 是否删除成功
      */
     boolean deletePaymentItem(Integer id);
+
     /**
      * 处理学生缴费请求
      *
      * @param studentNumber 学号
-     * @param amountcard 缴费编号
-     * @param method 支付方式
+     * @param amountcard    缴费编号
+     * @param method        支付方式
      * @return 支付是否成功
      */
     boolean payForItem(Integer studentNumber, String amountcard, String method);
 
+    /**
+     * 根据学号查询缴费记录
+     *
+     * @param studentNumber 学生学号
+     * @return 缴费记录
+     */
+    PayItem getPayItemByStudentNumber(String studentNumber);
 }

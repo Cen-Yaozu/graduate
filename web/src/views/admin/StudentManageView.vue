@@ -3,7 +3,7 @@
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span style="font-weight: bold">学生管理</span>
+          <span style="font-weight: bold; font-size: 16px;">学生管理</span>
           <div class="header-actions">
             <el-input
               v-model="searchText"
@@ -31,66 +31,70 @@
         row-key="id"
         @row-click="handleRowClick"
       >
-        <el-table-column prop="studentNumber" label="学号" width="120" />
-        <el-table-column prop="studentName" label="姓名" width="100" />
-        <el-table-column prop="gender" label="性别" width="60">
+        <el-table-column prop="studentNumber" label="学号" width="100" align="center" />
+        <el-table-column prop="studentName" label="姓名" width="80" align="center" />
+        <el-table-column label="性别" width="60" align="center">
           <template #default="scope">
-            {{ scope.row.gender === 'male' ? '男' : '女' }}
+            {{ scope.row.sex }}
           </template>
         </el-table-column>
-        <el-table-column prop="majorname" label="专业" width="180" />
-        <el-table-column prop="classname" label="班级" width="120" />
-        <el-table-column prop="phone" label="联系电话" width="120" />
-        <el-table-column prop="admissionTicket" label="准考证号" width="160" />
-        <el-table-column prop="paymentStatus" label="缴费状态" width="90">
+        <el-table-column prop="majorname" label="专业" min-width="160" align="center" />
+        <el-table-column prop="studentPhone" label="联系电话" width="110" align="center" />
+        <el-table-column label="缴费状态" width="80" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.paymentStatus === 1 ? 'success' : 'danger'">
+            <el-tag :type="scope.row.paymentStatus === 1 ? 'success' : 'danger'" size="small">
               {{ scope.row.paymentStatus === 1 ? '已缴费' : '未缴费' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="arriveStatus" label="抵校状态" width="90">
+        <el-table-column label="抵校状态" width="80" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.arriveStatus === 1 ? 'success' : 'warning'">
+            <el-tag :type="scope.row.arriveStatus === 1 ? 'success' : 'warning'" size="small">
               {{ scope.row.arriveStatus === 1 ? '已抵校' : '未抵校' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="scope">
-            <el-button type="primary" size="small" @click.stop="editStudent(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" @click.stop="deleteStudent(scope.row)">删除</el-button>
-            <el-dropdown @command="(command) => handleCommand(command, scope.row)" trigger="click">
-              <el-button size="small" type="info">
-                更多<el-icon class="el-icon--right"><arrow-down /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="resetPassword">重置密码</el-dropdown-item>
-                  <el-dropdown-item command="viewPayment">查看缴费</el-dropdown-item>
-                  <el-dropdown-item command="updatePayment">
-                    {{ scope.row.paymentStatus === 1 ? '标记为未缴费' : '标记为已缴费' }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="updateArrive">
-                    {{ scope.row.arriveStatus === 1 ? '标记为未抵校' : '标记为已抵校' }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <div class="button-group">
+              <el-button type="primary" size="small" plain @click.stop="editStudent(scope.row)">编辑</el-button>
+              <el-button type="danger" size="small" plain @click.stop="deleteStudent(scope.row)">删除</el-button>
+              <el-dropdown @command="(command) => handleCommand(command, scope.row)" trigger="click">
+                <el-button size="small" plain type="info">
+                  更多<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="resetPassword">重置密码</el-dropdown-item>
+                    <el-dropdown-item command="viewPayment">查看缴费</el-dropdown-item>
+                    <el-dropdown-item command="updatePayment">
+                      {{ scope.row.paymentStatus === 1 ? '标记为未缴费' : '标记为已缴费' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="updateArrive">
+                      {{ scope.row.arriveStatus === 1 ? '标记为未抵校' : '标记为已抵校' }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
       
       <div class="pagination-container">
+        <div class="total-info">共 {{ total }} 条</div>
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
+          layout="sizes, prev, pager, next, jumper"
           :total="total"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
+        <div class="page-info">
+          前往 <el-input v-model="goToPage" type="text" style="width: 50px" @keyup.enter="handleGoTo" /> 页
+        </div>
       </div>
     </el-card>
     
@@ -121,16 +125,16 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="性别" prop="gender">
-              <el-select v-model="studentForm.gender" placeholder="请选择性别" style="width: 100%">
-                <el-option label="男" value="male" />
-                <el-option label="女" value="female" />
+            <el-form-item label="性别" prop="sex">
+              <el-select v-model="studentForm.sex" placeholder="请选择性别" style="width: 100%">
+                <el-option label="男" value="男" />
+                <el-option label="女" value="女" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="联系电话" prop="phone">
-              <el-input v-model="studentForm.phone" />
+            <el-form-item label="联系电话" prop="studentPhone">
+              <el-input v-model="studentForm.studentPhone" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -150,18 +154,10 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="准考证号" prop="admissionTicket">
-              <el-input v-model="studentForm.admissionTicket" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="邮箱" prop="email">
               <el-input v-model="studentForm.email" />
             </el-form-item>
           </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="缴费状态" prop="paymentStatus">
               <el-select v-model="studentForm.paymentStatus" placeholder="请选择缴费状态" style="width: 100%">
@@ -170,6 +166,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="抵校状态" prop="arriveStatus">
               <el-select v-model="studentForm.arriveStatus" placeholder="请选择抵校状态" style="width: 100%">
@@ -178,11 +177,12 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="家庭住址" prop="address">
+              <el-input v-model="studentForm.address" />
+            </el-form-item>
+          </el-col>
         </el-row>
-        
-        <el-form-item label="家庭住址" prop="address">
-          <el-input v-model="studentForm.address" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -237,11 +237,10 @@
         <el-descriptions title="基本信息" :column="2" border>
           <el-descriptions-item label="学号">{{ selectedStudent.studentNumber }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ selectedStudent.studentName }}</el-descriptions-item>
-          <el-descriptions-item label="性别">{{ selectedStudent.gender === 'male' ? '男' : '女' }}</el-descriptions-item>
-          <el-descriptions-item label="联系电话">{{ selectedStudent.phone }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ selectedStudent.sex }}</el-descriptions-item>
+          <el-descriptions-item label="联系电话">{{ selectedStudent.studentPhone }}</el-descriptions-item>
           <el-descriptions-item label="专业">{{ selectedStudent.majorname }}</el-descriptions-item>
           <el-descriptions-item label="班级">{{ selectedStudent.classname }}</el-descriptions-item>
-          <el-descriptions-item label="准考证号">{{ selectedStudent.admissionTicket }}</el-descriptions-item>
           <el-descriptions-item label="邮箱">{{ selectedStudent.email }}</el-descriptions-item>
           <el-descriptions-item label="缴费状态">
             <el-tag :type="selectedStudent.paymentStatus === 1 ? 'success' : 'danger'">
@@ -281,6 +280,7 @@ export default {
     const currentPage = ref(1)
     const pageSize = ref(10)
     const searchText = ref('')
+    const goToPage = ref('')
     
     // 对话框相关
     const dialogVisible = ref(false)
@@ -296,11 +296,10 @@ export default {
       id: null,
       studentNumber: '',
       studentName: '',
-      gender: 'male',
-      phone: '',
+      sex: '男',
+      studentPhone: '',
       majorname: '',
       classname: '',
-      admissionTicket: '',
       email: '',
       paymentStatus: 0,
       arriveStatus: 0,
@@ -316,10 +315,10 @@ export default {
       studentName: [
         { required: true, message: '请输入姓名', trigger: 'blur' }
       ],
-      gender: [
+      sex: [
         { required: true, message: '请选择性别', trigger: 'change' }
       ],
-      phone: [
+      studentPhone: [
         { required: true, message: '请输入联系电话', trigger: 'blur' },
         { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
       ],
@@ -348,11 +347,10 @@ export default {
             id: 1,
             studentNumber: '2024001',
             studentName: '张三',
-            gender: 'male',
-            phone: '13800138001',
+            sex: '男',
+            studentPhone: '13800138001',
             majorname: '计算机科学与技术',
             classname: '计算机1班',
-            admissionTicket: '20240001',
             email: 'zhangsan@example.com',
             paymentStatus: 1,
             arriveStatus: 1,
@@ -362,11 +360,10 @@ export default {
             id: 2,
             studentNumber: '2024002',
             studentName: '李四',
-            gender: 'female',
-            phone: '13800138002',
+            sex: '女',
+            studentPhone: '13800138002',
             majorname: '软件工程',
             classname: '软件1班',
-            admissionTicket: '20240002',
             email: 'lisi@example.com',
             paymentStatus: 0,
             arriveStatus: 0,
@@ -396,12 +393,24 @@ export default {
       loadStudentList()
     }
     
+    // 分页跳转
+    const handleGoTo = () => {
+      const pageNum = parseInt(goToPage.value)
+      if (pageNum && pageNum > 0 && pageNum <= Math.ceil(total.value / pageSize.value)) {
+        currentPage.value = pageNum
+        loadStudentList()
+      } else {
+        ElMessage.warning('请输入有效的页码')
+      }
+      goToPage.value = ''
+    }
+    
     // 打开添加对话框
     const openAddDialog = () => {
       isEdit.value = false
       // 重置表单
       Object.keys(studentForm).forEach(key => {
-        studentForm[key] = key === 'gender' ? 'male' : 
+        studentForm[key] = key === 'sex' ? '男' : 
                            (key === 'paymentStatus' || key === 'arriveStatus') ? 0 : ''
       })
       if (studentFormRef.value) {
@@ -620,6 +629,7 @@ export default {
       currentPage,
       pageSize,
       searchText,
+      goToPage,
       dialogVisible,
       importDialogVisible,
       drawerVisible,
@@ -645,7 +655,8 @@ export default {
       resetPassword,
       viewPayment,
       updatePaymentStatus,
-      updateArriveStatus
+      updateArriveStatus,
+      handleGoTo
     }
   }
 }
@@ -660,6 +671,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .header-actions {
@@ -671,6 +683,26 @@ export default {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+}
+
+.total-info {
+  margin-right: 15px;
+  color: #606266;
+  font-size: 13px;
+}
+
+.page-info {
+  margin-left: 15px;
+  color: #606266;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-pagination .el-input__inner) {
+  height: 24px;
+  line-height: 24px;
 }
 
 .drawer-content {
@@ -679,5 +711,52 @@ export default {
 
 :deep(.el-upload-dragger) {
   width: 100%;
+}
+
+/* 按钮样式调整 */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+:deep(.el-button--small) {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+:deep(.el-table .cell) {
+  line-height: 20px;
+}
+
+:deep(.el-tag--small) {
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+}
+
+/* 表格样式调整 */
+:deep(.el-table) {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+:deep(.el-table th) {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 分页样式 */
+:deep(.el-pagination) {
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+/* 表单控件样式 */
+:deep(.el-input__inner) {
+  height: 36px;
+  line-height: 36px;
 }
 </style> 

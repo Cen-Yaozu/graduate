@@ -85,11 +85,34 @@ public class AdminDormController {
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
             @RequestParam(required = false) Integer classroomId) {
-        IPage<Student> pageResult = dormService.getAllStudents(page, size, department, majorname, classroomId);
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", pageResult.getRecords());
-        data.put("total", pageResult.getTotal());
-        return Result.success(data);
+        try {
+            IPage<Student> pageResult = dormService.getAllStudents(page, size, department, majorname, classroomId);
+
+            // 使用Map存储已处理的学生，以学号为键，防止重复
+            Map<String, Student> uniqueStudents = new HashMap<>();
+
+            for (Student student : pageResult.getRecords()) {
+                // 基于学号去重
+                if (!uniqueStudents.containsKey(student.getStudentNumber())) {
+                    uniqueStudents.put(student.getStudentNumber(), student);
+                }
+            }
+
+            // 将去重后的学生数据转换为列表
+            List<Student> enhancedStudents = new ArrayList<>(uniqueStudents.values());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("list", enhancedStudents);
+            // 需要调整总数为去重后的数量
+            data.put("total", uniqueStudents.size());
+
+            System.out.println("查询到的学生总数(去重后): " + enhancedStudents.size());
+            return Result.success(data);
+        } catch (Exception e) {
+            System.err.println("获取所有学生失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("获取所有学生失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -112,20 +135,31 @@ public class AdminDormController {
 
             // 确保返回的学生数据包含完整字段
             List<Student> enhancedStudents = new ArrayList<>();
+            // 使用Map存储已处理的学生，以学号为键，防止重复
+            Map<String, Student> uniqueStudents = new HashMap<>();
+
             for (Student student : pageResult.getRecords()) {
                 // 打印每个学生对象的姓名和性别字段，检查是否为空
                 System.out.println("学生数据: id=" + student.getId() +
                         ", 学号=" + student.getStudentNumber() +
                         ", 姓名=" + (student.getStudentName() != null ? student.getStudentName() : "null") +
                         ", 性别=" + (student.getSex() != null ? student.getSex() : "null"));
-                enhancedStudents.add(student);
+
+                // 基于学号去重
+                if (!uniqueStudents.containsKey(student.getStudentNumber())) {
+                    uniqueStudents.put(student.getStudentNumber(), student);
+                }
             }
+
+            // 将去重后的学生数据转换为列表
+            enhancedStudents = new ArrayList<>(uniqueStudents.values());
 
             Map<String, Object> data = new HashMap<>();
             data.put("list", enhancedStudents);
-            data.put("total", pageResult.getTotal());
+            // 需要调整总数为去重后的数量
+            data.put("total", uniqueStudents.size());
 
-            System.out.println("查询到的未分配学生数量: " + enhancedStudents.size());
+            System.out.println("查询到的未分配学生数量(去重后): " + enhancedStudents.size());
             return Result.success(data);
         } catch (Exception e) {
             System.err.println("获取未分配学生失败: " + e.getMessage());
@@ -144,11 +178,34 @@ public class AdminDormController {
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
             @RequestParam(required = false) Integer classroomId) {
-        IPage<Student> pageResult = dormService.getAssignedStudents(page, size, department, majorname, classroomId);
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", pageResult.getRecords());
-        data.put("total", pageResult.getTotal());
-        return Result.success(data);
+        try {
+            IPage<Student> pageResult = dormService.getAssignedStudents(page, size, department, majorname, classroomId);
+
+            // 使用Map存储已处理的学生，以学号为键，防止重复
+            Map<String, Student> uniqueStudents = new HashMap<>();
+
+            for (Student student : pageResult.getRecords()) {
+                // 基于学号去重
+                if (!uniqueStudents.containsKey(student.getStudentNumber())) {
+                    uniqueStudents.put(student.getStudentNumber(), student);
+                }
+            }
+
+            // 将去重后的学生数据转换为列表
+            List<Student> enhancedStudents = new ArrayList<>(uniqueStudents.values());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("list", enhancedStudents);
+            // 需要调整总数为去重后的数量
+            data.put("total", uniqueStudents.size());
+
+            System.out.println("查询到的已分配学生数量(去重后): " + enhancedStudents.size());
+            return Result.success(data);
+        } catch (Exception e) {
+            System.err.println("获取已分配学生失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("获取已分配学生失败: " + e.getMessage());
+        }
     }
 
     /**
