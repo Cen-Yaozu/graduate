@@ -38,9 +38,20 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
     private ClassroomMapper classroomMapper;
 
     @Override
-    public IPage<Dorm> getDormPage(int page, int size, String keyword) {
+    public IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex) {
         Page<Dorm> pageParam = new Page<>(page, size);
-        IPage<Dorm> dormPage = dormMapper.selectDormPage(pageParam, keyword);
+
+        // 将英文性别参数转换为中文
+        String dormSexChinese = null;
+        if (dormsex != null && !dormsex.isEmpty()) {
+            if ("MALE".equalsIgnoreCase(dormsex)) {
+                dormSexChinese = "男";
+            } else if ("FEMALE".equalsIgnoreCase(dormsex)) {
+                dormSexChinese = "女";
+            }
+        }
+
+        IPage<Dorm> dormPage = dormMapper.selectDormPage(pageParam, keyword, dormSexChinese);
 
         // 获取每个宿舍的成员
         dormPage.getRecords().forEach(dorm -> {
@@ -96,15 +107,17 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
         // 调用带关键词参数的方法，传入null作为关键词
         return getAllStudents(page, size, department, majorname, classroomId, null);
     }
-    
+
     @Override
-    public IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId, String keyword) {
+    public IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String keyword) {
         // 创建分页对象
         Page<Student> pageResult = new Page<>(page, size);
-        
+
         // 查询学生，注意参数顺序：page, keyword, department, majorname, classroomId
-        IPage<Student> studentPage = studentDormMapper.selectAllStudents(pageResult, keyword, department, majorname, classroomId);
-        
+        IPage<Student> studentPage = studentDormMapper.selectAllStudents(pageResult, keyword, department, majorname,
+                classroomId);
+
         return studentPage;
     }
 
@@ -114,12 +127,13 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
         // 调用带关键词参数的方法，传入null作为关键词
         return getUnassignedStudents(page, size, department, majorname, classroomId, selectDorm, null);
     }
-    
+
     @Override
     public IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname,
             Integer classroomId, String selectDorm, String keyword) {
         Page<Student> pageParam = new Page<>(page, size);
-        return studentDormMapper.selectUnassignedStudents(pageParam, keyword, department, majorname, classroomId, selectDorm);
+        return studentDormMapper.selectUnassignedStudents(pageParam, keyword, department, majorname, classroomId,
+                selectDorm);
     }
 
     @Override
@@ -128,12 +142,13 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
         // 调用带关键词参数的方法，传入null作为关键词
         return getAssignedStudents(page, size, department, majorname, classroomId, dormitory, dormCard, null);
     }
-    
+
     @Override
     public IPage<Student> getAssignedStudents(int page, int size, String department, String majorname,
             Integer classroomId, String dormitory, String dormCard, String keyword) {
         Page<Student> pageParam = new Page<>(page, size);
-        return studentDormMapper.selectAssignedStudents(pageParam, keyword, department, majorname, classroomId, dormitory, dormCard);
+        return studentDormMapper.selectAssignedStudents(pageParam, keyword, department, majorname, classroomId,
+                dormitory, dormCard);
     }
 
     @Override
@@ -166,32 +181,28 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
         try {
             // 遍历所有需要分配的学生
             for (String studentNumber : studentNumbers) {
-                // 更新学生表中的宿舍信息
+                // 获取学生信息
                 Student student = studentMapper.selectOne(new QueryWrapper<Student>()
                         .eq("studentNumber", studentNumber));
 
                 if (student != null) {
                     // 检查学生性别是否与宿舍性别匹配
-                    if (dorm.getDormsex() != null && !dorm.getDormsex().isEmpty() 
+                    if (dorm.getDormsex() != null && !dorm.getDormsex().isEmpty()
                             && student.getSex() != null && !student.getSex().isEmpty()
                             && !dorm.getDormsex().equals(student.getSex())) {
                         // 性别不匹配
-                        System.err.println("学生性别与宿舍不匹配: 学号=" + studentNumber 
-                                + ", 学生性别=" + student.getSex() 
+                        System.err.println("学生性别与宿舍不匹配: 学号=" + studentNumber
+                                + ", 学生性别=" + student.getSex()
                                 + ", 宿舍性别=" + dorm.getDormsex());
                         return false;
                     }
-                    
+
                     // 如果学生没有selectDorm且提供了宿舍类型，则设置
-                    if ((student.getSelectDorm() == null || student.getSelectDorm().isEmpty()) 
+                    if ((student.getSelectDorm() == null || student.getSelectDorm().isEmpty())
                             && dormType != null && !dormType.isEmpty()) {
                         student.setSelectDorm(dormType);
+                        studentMapper.updateById(student);
                     }
-                    
-                    // 更新宿舍信息
-                    student.setDormitory(dormitory);
-                    student.setDormNumber(dormCard);
-                    studentMapper.updateById(student);
                 }
 
                 // 删除学生现有宿舍分配（如果有）
@@ -227,10 +238,25 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
 
         // 添加过滤条件
         if (dormType != null && !dormType.isEmpty()) {
-            wrapper.eq("dormType", dormType);
+            // 添加日志以便调试
+            System.out.println("查询可用宿舍时的宿舍类型参数: " + dormType);
+
+            // 处理不同格式的宿舍类型
+            if ("FOUR".equalsIgnoreCase(dormType) || "四人间".equals(dormType)) {
+                wrapper.eq("dormType", "四人间");
+            } else if ("SIX".equalsIgnoreCase(dormType) || "六人间".equals(dormType)) {
+                wrapper.eq("dormType", "六人间");
+            } else if ("EIGHT".equalsIgnoreCase(dormType) || "八人间".equals(dormType)) {
+                wrapper.eq("dormType", "八人间");
+            } else {
+                // 如果是其他值，则直接使用
+                wrapper.eq("dormType", dormType);
+            }
         }
 
         if (dormsex != null && !dormsex.isEmpty()) {
+            // 添加日志以便调试
+            System.out.println("查询可用宿舍时的性别参数: " + dormsex);
             wrapper.eq("dormsex", dormsex);
         }
 
@@ -238,11 +264,24 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
             wrapper.eq("dormitory", dormitory);
         }
 
+        // 打印SQL语句以便调试
+        System.out.println("查询可用宿舍的SQL: " + wrapper.getCustomSqlSegment());
+
         List<Dorm> dorms = dormMapper.selectList(wrapper);
+        System.out.println("查询到的宿舍数量: " + dorms.size());
 
         // 获取所有宿舍的成员信息
         for (Dorm dorm : dorms) {
-            List<Student> members = dormMapper.selectDormMembers(dorm.getDormCard(), dorm.getDormitory());
+            // 1. 先查询student_dorm表，获取与该宿舍关联的所有学号
+            List<String> studentNumbers = dormMapper.selectStudentNumbersByDorm(dorm.getDormCard(),
+                    dorm.getDormitory());
+
+            // 2. 再通过学号列表查询完整的学生信息
+            List<Student> members = new ArrayList<>();
+            if (studentNumbers != null && !studentNumbers.isEmpty()) {
+                members = studentMapper.selectStudentsByStudentNumbers(studentNumbers);
+            }
+
             dorm.setMembers(members);
         }
 
@@ -271,47 +310,42 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
                     throw new RuntimeException("宿舍已满: " + dormitory + " " + dormCard);
                 }
 
-                // 更新学生宿舍信息
+                // 获取学生信息
                 Student student = studentMapper.selectOne(new QueryWrapper<Student>()
                         .eq("studentNumber", studentNumber));
 
                 if (student != null) {
                     // 检查学生性别是否与宿舍性别匹配
-                    if (dorm.getDormsex() != null && !dorm.getDormsex().isEmpty() 
+                    if (dorm.getDormsex() != null && !dorm.getDormsex().isEmpty()
                             && student.getSex() != null && !student.getSex().isEmpty()
                             && !dorm.getDormsex().equals(student.getSex())) {
                         // 性别不匹配
-                        throw new RuntimeException("学生性别与宿舍不匹配: 学号=" + studentNumber 
-                                + ", 学生性别=" + student.getSex() 
+                        throw new RuntimeException("学生性别与宿舍不匹配: 学号=" + studentNumber
+                                + ", 学生性别=" + student.getSex()
                                 + ", 宿舍性别=" + dorm.getDormsex());
                     }
-                    
+
                     // 如果学生没有selectDorm且提供了宿舍类型，则设置
-                    if ((student.getSelectDorm() == null || student.getSelectDorm().isEmpty()) 
+                    if ((student.getSelectDorm() == null || student.getSelectDorm().isEmpty())
                             && dormType != null && !dormType.isEmpty()) {
                         student.setSelectDorm(dormType);
+                        studentMapper.updateById(student);
                     }
-                    
-                    // 更新宿舍信息
-                    student.setDormitory(dormitory);
-                    student.setDormNumber(dormCard);
-                    studentMapper.updateById(student);
-                    
-                    // 更新student_dorm表
-                    // 先删除原有记录
-                    studentDormMapper.deleteByStudentNumber(studentNumber);
-                    
-                    // 构建并插入新记录
-                    StudentDorm studentDorm = new StudentDorm();
-                    studentDorm.setStudentNumber(studentNumber);
-                    studentDorm.setStudentName(student.getStudentName());
-                    studentDorm.setDepartment(student.getDepartment());
-                    studentDorm.setDormType(dormType != null ? dormType : student.getSelectDorm());
-                    studentDorm.setDormitory(dormitory);
-                    studentDorm.setDormCard(dormCard);
-                    
-                    studentDormMapper.insert(studentDorm);
                 }
+
+                // 删除学生现有宿舍分配（如果有）
+                studentDormMapper.deleteByStudentNumber(studentNumber);
+
+                // 构建并插入新记录
+                StudentDorm studentDorm = new StudentDorm();
+                studentDorm.setStudentNumber(studentNumber);
+                studentDorm.setStudentName(student.getStudentName());
+                studentDorm.setDepartment(student.getDepartment());
+                studentDorm.setDormType(dormType != null ? dormType : student.getSelectDorm());
+                studentDorm.setDormitory(dormitory);
+                studentDorm.setDormCard(dormCard);
+
+                studentDormMapper.insert(studentDorm);
             }
 
             return true;
@@ -367,17 +401,8 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
             Student student = studentMapper.selectOne(new QueryWrapper<Student>()
                     .eq("studentNumber", studentNumber));
 
-            if (student != null) {
-                // 重置学生宿舍信息，但保留selectDorm字段
-                // 这样学生会进入"未分配"状态
-                student.setDormitory(null);
-                student.setDormNumber(null);
-                // 注意：不修改selectDorm字段，保持原值
-
-                studentMapper.updateById(student);
-            }
-
-            // 从student_dorm表中删除记录
+            // 不再需要修改学生表中的宿舍信息，因为字段已删除
+            // 只需要从student_dorm表中删除记录
             studentDormMapper.deleteByStudentNumber(studentNumber);
 
             return true;
@@ -414,7 +439,7 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
             if (studentNumbers == null || studentNumbers.isEmpty() || selectDorm == null) {
                 return false;
             }
-            
+
             for (String studentNumber : studentNumbers) {
                 updateStudentSelectDorm(studentNumber, selectDorm);
             }

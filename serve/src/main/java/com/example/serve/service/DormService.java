@@ -14,7 +14,7 @@ public interface DormService extends IService<Dorm> {
     /**
      * 分页查询宿舍列表
      */
-    IPage<Dorm> getDormPage(int page, int size, String keyword);
+    IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex);
 
     /**
      * 获取所有宿舍
@@ -44,27 +44,32 @@ public interface DormService extends IService<Dorm> {
     /**
      * 获取所有学生（带关键词搜索）
      */
-    IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId, String keyword);
+    IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String keyword);
 
     /**
      * 获取未分配宿舍的学生
      */
-    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId, String selectDorm);
+    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String selectDorm);
 
     /**
      * 获取未分配宿舍的学生（带关键词搜索）
      */
-    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId, String selectDorm, String keyword);
+    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String selectDorm, String keyword);
 
     /**
      * 获取已分配宿舍的学生
      */
-    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId, String dormitory, String dormCard);
+    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String dormitory, String dormCard);
 
     /**
      * 获取已分配宿舍的学生（带关键词搜索）
      */
-    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId, String dormitory, String dormCard, String keyword);
+    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId,
+            String dormitory, String dormCard, String keyword);
 
     /**
      * 分配学生到宿舍
@@ -115,4 +120,4 @@ public interface DormService extends IService<Dorm> {
      * 批量分配学生到宿舍
      */
     boolean batchAssignStudentsToDorm(List<Map<String, Object>> assignments);
-} 
+}

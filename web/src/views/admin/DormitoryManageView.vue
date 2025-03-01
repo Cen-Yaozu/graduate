@@ -1,852 +1,368 @@
 <template>
-  <div class="dorm-manage-container">
-    <el-card class="dorm-card">
-      <el-alert
-        title="宿舍管理使用指南"
-        type="info"
-        :closable="false"
-        show-icon
-        style="margin-bottom: 20px;"
-      >
-        <p>1. 可以通过搜索框和筛选条件查找学生</p>
-        <p>2. 点击"添加宿舍"按钮可以新增宿舍</p>
-        <p>3. 为未分配宿舍的学生分配宿舍</p>
-        <p>4. 为已分配宿舍的学生调整宿舍或移除宿舍分配</p>
-      </el-alert>
-      
-      <div class="filter-container">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索学号、姓名或专业"
-          clearable
-          style="width: 220px;"
-          @keyup.enter="handleSearch"
-        />
-        <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
-        <el-button type="info" icon="el-icon-refresh" @click="resetSearch">重置</el-button>
-        <el-button type="success" icon="el-icon-plus" @click="handleAddDorm">添加宿舍</el-button>
-        <el-button type="primary" icon="el-icon-s-grid" @click="openBatchAssignDialog">批量分配</el-button>
+  <div class="dormitory-manage">
+    <el-card class="main-card">
+      <div class="page-header">
+        <h2>宿舍管理系统</h2>
       </div>
-
-      <!-- 分类标签页 -->
+      
       <el-tabs v-model="activeTab" @tab-click="handleTabChange">
-        <el-tab-pane label="全部学生" name="all"></el-tab-pane>
-        <el-tab-pane label="已分配学生" name="assigned"></el-tab-pane>
-        <el-tab-pane label="未分配学生" name="unassigned"></el-tab-pane>
-      </el-tabs>
-
-      <!-- 学生表格 -->
-      <el-table
-        v-loading="tableLoading"
-        :data="studentList"
-        border
-        stripe
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="studentNumber"
-          label="学号"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="studentName"
-          label="姓名"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="sex"
-          label="性别"
-          width="80"
-          align="center"
-        />
-        <el-table-column
-          prop="department"
-          label="系别"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="majorname"
-          label="专业"
-          min-width="150"
-          align="center"
-        />
-        <el-table-column
-          prop="dormitory"
-          label="宿舍楼"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="dorm_number"
-          label="宿舍号"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="selectDorm"
-          label="宿舍类型选择"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          label="操作"
-          width="220"
-          align="center"
-          fixed="right"
-        >
-          <template #default="scope">
-            <div class="action-buttons">
-              <el-button
-                v-if="!hasAssignedDorm(scope.row)"
-                size="mini"
-                type="primary"
-                @click="openAssignToStudentDialog(scope.row)"
-              >
-                分配宿舍
-              </el-button>
-              <el-button
-                v-if="hasAssignedDorm(scope.row)"
-                size="mini"
-                type="warning"
-                @click="openReassignDialog(scope.row)"
-              >
-                调整宿舍
-              </el-button>
-              <el-button
-                v-if="hasAssignedDorm(scope.row)"
-                size="mini"
-                type="danger"
-                @click="handleRemoveFromDorm(scope.row)"
-              >
-                移除宿舍
-              </el-button>
-              <el-button
-                size="mini"
-                type="success"
-                @click="openSelectDormTypeDialog(scope.row)"
-              >
-                选择宿舍类型
-              </el-button>
+        <el-tab-pane label="宿舍分配" name="assignment">
+          <!-- 宿舍分配部分 -->
+          
+          <div class="status-filter">
+            <el-radio-group v-model="assignmentStatus" @change="handleStatusChange">
+              <el-radio-button label="all">全部</el-radio-button>
+              <el-radio-button label="assigned">已分配</el-radio-button>
+              <el-radio-button label="pending">待分配</el-radio-button>
+              <el-radio-button label="unassigned">未分配</el-radio-button>
+            </el-radio-group>
+          </div>
+          
+          <!-- 学生表格 -->
+          <div class="table-container">
+            <div class="table-operations" v-if="selectedStudents.length > 0">
+              <el-button type="primary" @click="showAssignDialog">批量分配宿舍</el-button>
             </div>
-          </template>
-        </el-table-column>
-        <template #empty>
-          <div class="empty-table-tip">
-            <el-empty 
-              :description="getEmptyTableTip()" 
-              :image-size="120"
-            >
-              <template #description>
-                <p>{{ getEmptyTableTip() }}</p>
-                <p class="tip-extra" v-if="activeTab !== 'all'">
-                  <el-button type="text" @click="activeTab = 'all'">查看全部学生</el-button>
-                </p>
-              </template>
-            </el-empty>
+            
+            <el-table
+              ref="studentTable"
+              :data="studentList"
+              border
+              style="width: 100%"
+              @selection-change="handleSelectionChange"
+              v-loading="loading">
+              <el-table-column
+                type="selection"
+                width="55">
+              </el-table-column>
+              <el-table-column
+                prop="studentNumber"
+                label="学号"
+                width="110">
+              </el-table-column>
+              <el-table-column
+                prop="name"
+                label="姓名"
+                width="100">
+              </el-table-column>
+              <el-table-column
+                prop="gender"
+                label="性别"
+                width="80">
+                <template #default="scope">
+                  {{ scope.row.gender === 'MALE' ? '男' : '女' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="department"
+                label="院系">
+              </el-table-column>
+              <el-table-column
+                prop="major"
+                label="专业">
+              </el-table-column>
+              <el-table-column
+                prop="className"
+                label="班级">
+              </el-table-column>
+              <el-table-column
+                prop="dormInfo"
+                label="宿舍信息"
+                width="150">
+                <template #default="scope">
+                  <span v-if="scope.row.dormInfo">{{ scope.row.dormInfo }}</span>
+                  <span v-else class="unassigned">未分配</span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="状态">
+                <template #default="scope">
+                  <el-tag
+                    :type="getStudentStatusType(scope.row)"
+                    effect="plain"
+                  >
+                    {{ getStudentStatusText(scope.row) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <!-- 只在待分配标签页显示操作列 -->
+              <el-table-column
+                v-if="assignmentStatus === 'pending'"
+                label="操作"
+                width="200">
+                <template #default="scope">
+                  <div class="action-buttons">
+                    <!-- 待分配状态：显示分配按钮 -->
+                    <el-button
+                      v-if="isPendingStudent(scope.row)"
+                      size="small"
+                      type="primary"
+                      @click="assignDormToStudent(scope.row)"
+                    >
+                      分配宿舍
+                    </el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <div class="pagination-container">
+              <el-pagination
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page="currentPage"
+                :page-sizes="[10, 20, 30, 50]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="totalStudents">
+              </el-pagination>
+            </div>
           </div>
-        </template>
-      </el-table>
-
-      <div class="pagination-container">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :page-sizes="[10, 20, 50, 100, 200, 500]"
-          :page-size="studentPageSize"
-          :total="studentTotal"
-          :current-page="studentCurrentPage"
-          @size-change="handleStudentSizeChange"
-          @current-change="handleStudentCurrentChange"
-        />
-      </div>
+        </el-tab-pane>
+        
+        <el-tab-pane label="宿舍信息" name="information">
+          <!-- 宿舍信息部分 -->
+          <div class="filter-container">
+            <el-form :inline="true" :model="dormFilter" class="filter-form">
+              <el-form-item label="楼栋名称:">
+                <el-input v-model="dormFilter.buildingName" placeholder="楼栋名称" clearable @input="searchDorms"></el-input>
+              </el-form-item>
+              <el-form-item label="宿舍号:">
+                <el-input v-model="dormFilter.roomNumber" placeholder="宿舍号" clearable @input="searchDorms"></el-input>
+              </el-form-item>
+              <el-form-item label="宿舍类型:">
+                <el-select v-model="dormFilter.type" placeholder="宿舍类型" clearable @change="searchDorms">
+                  <el-option label="四人间" value="FOUR"></el-option>
+                  <el-option label="六人间" value="SIX"></el-option>
+                  <el-option label="八人间" value="EIGHT"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="性别:">
+                <el-select v-model="dormFilter.gender" placeholder="性别" clearable @change="searchDorms">
+                  <el-option label="男" value="MALE"></el-option>
+                  <el-option label="女" value="FEMALE"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <div class="operation-buttons">
+              <el-button type="primary" @click="showAddDormDialog">添加宿舍</el-button>
+            </div>
+          </div>
+          
+          <!-- 宿舍表格 -->
+          <div class="table-container">
+            <el-table
+              :data="dormList"
+              border
+              style="width: 100%">
+              <el-table-column
+                prop="id"
+                label="ID"
+                width="80">
+              </el-table-column>
+              <el-table-column
+                prop="buildingName"
+                label="楼栋名称"
+                width="150">
+              </el-table-column>
+              <el-table-column
+                prop="roomNumber"
+                label="宿舍号"
+                width="120">
+              </el-table-column>
+              <el-table-column
+                prop="type"
+                label="宿舍类型"
+                width="120">
+                <template #default="scope">
+                  {{ scope.row.type === 'FOUR' ? '四人间' : 
+                     scope.row.type === 'SIX' ? '六人间' : 
+                     scope.row.type === 'EIGHT' ? '八人间' : '未知' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="gender"
+                label="性别"
+                width="80">
+                <template #default="scope">
+                  {{ scope.row.gender === 'MALE' ? '男' : scope.row.gender === 'FEMALE' ? '女' : '未知' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="capacity"
+                label="容量"
+                width="80">
+              </el-table-column>
+              <el-table-column
+                prop="occupied"
+                label="已住人数"
+                width="100">
+              </el-table-column>
+              <el-table-column
+                label="状态"
+                width="120">
+                <template #default="scope">
+                  <el-tag type="success" v-if="scope.row.occupied < scope.row.capacity">可住</el-tag>
+                  <el-tag type="danger" v-else>已满</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="操作"
+                width="250">
+                <template #default="scope">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    @click="viewDormMembers(scope.row)">
+                    查看成员
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="warning"
+                    @click="editDorm(scope.row)">
+                    编辑
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click="confirmDeleteDorm(scope.row)">
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <div class="pagination-container">
+              <el-pagination
+                @size-change="handleDormSizeChange"
+                @current-change="handleDormCurrentChange"
+                :current-page="dormCurrentPage"
+                :page-sizes="[10, 20, 30, 50]"
+                :page-size="dormPageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="totalDorms">
+              </el-pagination>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </el-card>
-
-    <!-- 宿舍表单对话框 -->
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="500px"
-      destroy-on-close
-    >
-      <el-form :model="dormForm" :rules="rules" ref="dormForm" label-width="100px">
-        <el-form-item label="系别" prop="department">
-          <el-input v-model="dormForm.department" placeholder="请输入系别"></el-input>
-        </el-form-item>
-        <el-form-item label="宿舍楼" prop="dormitory">
-          <el-input v-model="dormForm.dormitory" placeholder="请输入宿舍楼"></el-input>
-        </el-form-item>
-        <el-form-item label="宿舍号" prop="dormCard">
-          <el-input v-model="dormForm.dormCard" placeholder="请输入宿舍号"></el-input>
-        </el-form-item>
-        <el-form-item label="宿舍类型" prop="dormType">
-          <el-select v-model="dormForm.dormType" placeholder="请选择宿舍类型" style="width: 100%">
-            <el-option label="四人间" value="四人间"></el-option>
-            <el-option label="六人间" value="六人间"></el-option>
-            <el-option label="八人间" value="八人间"></el-option>
-            <el-option label="单人间" value="单人间"></el-option>
-            <el-option label="双人间" value="双人间"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="宿舍容量" prop="dormNum">
-          <el-input-number v-model="dormForm.dormNum" :min="1" :max="12"></el-input-number>
-        </el-form-item>
-        <el-form-item label="宿舍价格" prop="dormPrize">
-          <el-input-number v-model="dormForm.dormPrize" :min="0" :step="100"></el-input-number>
-        </el-form-item>
-        <el-form-item label="性别要求" prop="dormsex">
-          <el-select v-model="dormForm.dormsex" placeholder="请选择性别要求" style="width: 100%">
-            <el-option label="男" value="男"></el-option>
-            <el-option label="女" value="女"></el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="submitDormForm">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>
     
-    <!-- 选择宿舍类型对话框 -->
-    <el-dialog
-      title="选择宿舍类型"
-      v-model="selectDormTypeDialogVisible"
-      width="400px"
-      destroy-on-close
-    >
-      <div v-if="selectedStudent" class="student-info mb-3">
-        <p><strong>学号:</strong> {{ selectedStudent.studentNumber }}</p>
-        <p><strong>姓名:</strong> {{ selectedStudent.studentName }}</p>
-        <p><strong>性别:</strong> {{ selectedStudent.sex }}</p>
-      </div>
-      
-      <el-form :model="dormTypeForm" ref="dormTypeForm" label-width="100px">
-        <el-form-item label="宿舍类型" prop="dormType">
-          <el-select v-model="dormTypeForm.dormType" placeholder="请选择宿舍类型" style="width: 100%">
-            <el-option label="四人间" value="四人间"></el-option>
-            <el-option label="六人间" value="六人间"></el-option>
-            <el-option label="八人间" value="八人间"></el-option>
-            <el-option label="单人间" value="单人间"></el-option>
-            <el-option label="双人间" value="双人间"></el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="selectDormTypeDialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="submitSelectDormType">确 定</el-button>
-        </div>
-      </template>
-    </el-dialog>
-    
+    <!-- 对话框部分 -->
     <!-- 分配宿舍对话框 -->
-    <el-dialog
-      title="分配宿舍"
+    <el-dialog 
+      title="分配宿舍" 
       v-model="assignDialogVisible"
-      width="800px"
-      destroy-on-close
-    >
-      <div v-if="selectedStudent" class="student-info mb-3">
-        <div class="student-details">
-          <p><strong>学号:</strong> {{ selectedStudent.studentNumber }}</p>
-          <p><strong>姓名:</strong> {{ selectedStudent.studentName }}</p>
-          <p><strong>性别:</strong> {{ selectedStudent.sex }}</p>
-          <p v-if="selectedStudent.selectDorm"><strong>选择的宿舍类型:</strong> {{ selectedStudent.selectDorm }}</p>
-        </div>
-      </div>
-      
-      <div class="filter-container">
-        <el-select
-          v-model="assignDormType"
-          placeholder="选择宿舍类型"
-          clearable
-          style="width: 150px; margin-right: 10px;"
-          @change="fetchAvailableDorms"
-        >
-          <el-option label="四人间" value="四人间"></el-option>
-          <el-option label="六人间" value="六人间"></el-option>
-          <el-option label="八人间" value="八人间"></el-option>
-          <el-option label="单人间" value="单人间"></el-option>
-          <el-option label="双人间" value="双人间"></el-option>
-        </el-select>
-        
-        <el-select
-          v-model="assignDormBuilding"
-          placeholder="选择宿舍楼"
-          clearable
-          style="width: 150px; margin-right: 10px;"
-          @change="fetchAvailableDorms"
-        >
-          <el-option
-            v-for="item in dormBuildingOptions"
-            :key="item"
-            :label="item"
-            :value="item"
-          />
-        </el-select>
-        
-        <el-button type="primary" size="small" icon="el-icon-search" @click="fetchAvailableDorms">筛选宿舍</el-button>
-      </div>
-      
-      <el-table
-        v-loading="availableDormsLoading"
-        :data="availableDormsList"
-        border
-        style="width: 100%; margin-top: 15px;"
-        @selection-change="handleDormSelectionChange"
-        height="350px"
-      >
-        <el-table-column
-          type="selection"
-          width="55"
-          align="center"
-        />
-        <el-table-column
-          prop="department"
-          label="系别"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="dormitory"
-          label="宿舍楼"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="dormCard"
-          label="宿舍号"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="dormType"
-          label="宿舍类型"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="availableCount"
-          label="可用床位"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="dormsex"
-          label="性别要求"
-          min-width="100"
-          align="center"
-        />
-      </el-table>
-      
+      width="600px"
+      @open="handleDialogOpen">
+      <el-form :model="assignForm" label-width="100px" ref="assignForm">
+        <el-form-item label="宿舍类型:" prop="dormType" required>
+          <el-select v-model="assignForm.dormType" placeholder="请选择宿舍类型" @change="handleDormTypeChange" style="width: 100%">
+            <el-option label="四人间" value="FOUR"></el-option>
+            <el-option label="六人间" value="SIX"></el-option>
+            <el-option label="八人间" value="EIGHT"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="性别:" prop="gender">
+          <el-tag type="success" size="large">{{ assignForm.gender === 'MALE' ? '男' : '女' }}</el-tag>
+          <span class="note">* 根据学生性别自动选择</span>
+        </el-form-item>
+        <el-form-item label="宿舍楼栋:" prop="dormId" required>
+          <el-select v-model="assignForm.dormId" placeholder="请选择宿舍" filterable style="width: 100%">
+            <el-option
+              v-for="item in availableDorms"
+              :key="item.id"
+              :label="`${item.buildingName} - ${item.roomNumber} (已住${item.occupied}/${item.capacity})`"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <div style="float: left; color: #E6A23C; font-size: 13px;">
-            <i class="el-icon-warning-outline"></i> 提示：请确保学生性别与宿舍要求匹配
-          </div>
-          <el-button @click="assignDialogVisible = false">取 消</el-button>
-          <el-button 
-            type="primary" 
-            @click="assignStudentToDorm"
-            :disabled="selectedDorms.length !== 1"
-          >
-            确认分配
-          </el-button>
-        </div>
+        <span class="dialog-footer">
+          <el-button @click="assignDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmAssignDorm">确定</el-button>
+        </span>
       </template>
     </el-dialog>
     
     <!-- 宿舍成员对话框 -->
-    <el-dialog
-      title="宿舍成员"
+    <el-dialog 
+      title="宿舍成员" 
       v-model="membersDialogVisible"
-      width="800px"
-      destroy-on-close
-    >
-      <div v-if="selectedDorm" class="dorm-info">
-        <span>{{ selectedDorm.dormitory }} 栋 {{ selectedDorm.dormCard }} 房间 
-          <span v-if="dormMembers.length > 0">(已住: {{ dormMembers.length }}人 / 总容量: {{ selectedDorm.dormNum }}人)</span>
-        </span>
-        <el-button 
-          type="primary" 
-          size="small" 
-          icon="el-icon-plus" 
-          style="margin-left: 20px;"
-          @click="openAssignDialog"
-          :disabled="dormMembers.length >= selectedDorm.dormNum"
-        >
-          分配学生
-        </el-button>
+      width="800px">
+      <div v-if="dormMembers.length === 0" class="no-data">
+        该宿舍暂无成员
       </div>
-      
       <el-table
-        v-if="dormMembers.length > 0"
+        v-else
         :data="dormMembers"
         border
-        style="width: 100%; margin-top: 15px;"
-      >
+        style="width: 100%">
         <el-table-column
           prop="studentNumber"
           label="学号"
-          min-width="120"
-          align="center"
-        />
+          width="150">
+        </el-table-column>
         <el-table-column
-          prop="studentName"
+          prop="name"
           label="姓名"
-          min-width="100"
-          align="center"
-        />
+          width="120">
+        </el-table-column>
         <el-table-column
-          prop="sex"
+          prop="gender"
           label="性别"
-          width="80"
-          align="center"
-        />
-        <el-table-column
-          prop="department"
-          label="系别"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="majorname"
-          label="专业"
-          min-width="150"
-          align="center"
-        />
-        <el-table-column
-          label="操作"
-          width="120"
-          align="center"
-          fixed="right"
-        >
+          width="80">
           <template #default="scope">
-            <el-button
-              size="mini"
-              type="danger"
-              @click="handleRemoveFromDorm(scope.row)"
-            >
-              移除
-            </el-button>
+            {{ scope.row.gender === 'MALE' ? '男' : scope.row.gender === 'FEMALE' ? '女' : '未知' }}
           </template>
         </el-table-column>
-      </el-table>
-      
-      <div v-else class="empty-members">
-        <el-empty description="暂无学生" :image-size="100"></el-empty>
-      </div>
-    </el-dialog>
-    
-    <!-- 分配学生对话框 -->
-    <el-dialog
-      title="分配学生到宿舍"
-      v-model="assignDialogVisible"
-      width="1000px"
-      destroy-on-close
-    >
-      <div class="filter-container">
-        <el-select
-          v-model="departmentFilter"
-          placeholder="选择系别"
-          clearable
-          style="width: 180px; margin-right: 10px;"
-          @change="handleFilterChange"
-        >
-          <el-option
-            v-for="item in departmentOptions"
-            :key="item"
-            :label="item"
-            :value="item"
-          />
-        </el-select>
-        
-        <el-select
-          v-model="majorFilter"
-          placeholder="选择专业"
-          clearable
-          style="width: 220px; margin-right: 10px;"
-          @change="handleFilterChange"
-        >
-          <el-option
-            v-for="item in majorOptions"
-            :key="item"
-            :label="item"
-            :value="item"
-          />
-        </el-select>
-        
-        <el-select
-          v-model="classFilter"
-          placeholder="选择班级"
-          clearable
-          style="width: 180px; margin-right: 10px;"
-          @change="handleFilterChange"
-        >
-          <el-option
-            v-for="item in classOptions"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-        
-        <el-button type="primary" icon="el-icon-search" @click="fetchUnassignedStudents">搜索</el-button>
-      </div>
-      
-      <el-table
-        v-loading="studentsLoading"
-        :data="unassignedStudents"
-        border
-        style="width: 100%; margin-top: 15px;"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column
-          type="selection"
-          width="55"
-          align="center"
-        />
-        <el-table-column
-          prop="studentNumber"
-          label="学号"
-          min-width="120"
-          align="center"
-        />
-        <el-table-column
-          prop="studentName"
-          label="姓名"
-          min-width="100"
-          align="center"
-        />
-        <el-table-column
-          prop="sex"
-          label="性别"
-          width="80"
-          align="center"
-        />
         <el-table-column
           prop="department"
-          label="系别"
-          min-width="120"
-          align="center"
-        />
+          label="系部">
+        </el-table-column>
         <el-table-column
-          prop="majorname"
-          label="专业"
-          min-width="150"
-          align="center"
-        />
+          prop="major"
+          label="专业">
+        </el-table-column>
+        <el-table-column
+          prop="className"
+          label="班级">
+        </el-table-column>
       </el-table>
-      
-      <div class="pagination-container">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :page-sizes="[10, 20, 50, 100, 200, 500]"
-          :page-size="studentPageSize"
-          :total="studentTotal"
-          :current-page="studentCurrentPage"
-          @size-change="handleStudentSizeChange"
-          @current-change="handleStudentCurrentChange"
-        />
-      </div>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <span style="float: left; line-height: 32px;">
-            已选择 {{ selectedStudents.length }} 名学生，宿舍可分配人数: {{ selectedDorm ? (selectedDorm.dormNum - dormMembers.length) : 0 }}
-          </span>
-          <div style="float: left; width: 100%; margin-bottom: 10px; color: #E6A23C; font-size: 13px;">
-            <i class="el-icon-warning-outline"></i> 提示：有选择好宿舍号才算分配成功，请确保学生性别与宿舍要求匹配
-          </div>
-          <el-button @click="assignDialogVisible = false">取 消</el-button>
-          <el-button 
-            type="primary" 
-            @click="assignStudentsToDorm"
-            :disabled="selectedStudents.length === 0"
-          >
-            确认分配
-          </el-button>
-        </div>
-      </template>
     </el-dialog>
-
-    <!-- 批量分配对话框 -->
-    <el-dialog
-      title="批量分配宿舍"
-      v-model="batchAssignDialogVisible"
-      width="90%"
-      destroy-on-close
-      class="batch-assign-dialog"
-    >
-      <template #header>
-        <div class="dialog-header">
-          <h3>批量分配宿舍</h3>
-          <el-alert
-            title="提示：选择学生和可用宿舍后，点击确认分配即可完成批量分配"
-            type="info"
-            :closable="false"
-            show-icon
-            style="margin: 10px 0;"
-          />
-        </div>
-      </template>
-      
-      <div class="batch-assign-container">
-        <div class="students-section">
-          <div class="section-header">
-            <h3>学生选择</h3>
-            <div class="filter-container">
-              <el-select
-                v-model="batchDepartmentFilter"
-                placeholder="选择系别"
-                clearable
-                style="width: 150px; margin-right: 10px;"
-                @change="handleBatchFilterChange"
-              >
-                <el-option
-                  v-for="item in departmentOptions"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-              
-              <el-select
-                v-model="batchMajorFilter"
-                placeholder="选择专业"
-                clearable
-                style="width: 180px; margin-right: 10px;"
-                @change="handleBatchFilterChange"
-              >
-                <el-option
-                  v-for="item in majorOptions"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-              
-              <el-select
-                v-model="batchClassFilter"
-                placeholder="选择班级"
-                clearable
-                style="width: 150px; margin-right: 10px;"
-                @change="handleBatchFilterChange"
-              >
-                <el-option
-                  v-for="item in classOptions"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id"
-                />
-              </el-select>
-              
-              <el-button type="primary" size="small" icon="el-icon-search" @click="fetchBatchUnassignedStudents">搜索</el-button>
-            </div>
-          </div>
-          
-          <el-table
-            v-loading="batchStudentsLoading"
-            :data="batchUnassignedStudents"
-            border
-            style="width: 100%; margin-top: 15px;"
-            height="350px"
-            @selection-change="handleBatchSelectionChange"
-          >
-            <el-table-column
-              type="selection"
-              width="55"
-              align="center"
-            />
-            <el-table-column
-              prop="studentNumber"
-              label="学号"
-              min-width="120"
-              align="center"
-            />
-            <el-table-column
-              prop="studentName"
-              label="姓名"
-              min-width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="sex"
-              label="性别"
-              width="80"
-              align="center"
-            />
-            <el-table-column
-              prop="department"
-              label="系别"
-              min-width="120"
-              align="center"
-            />
-            <el-table-column
-              prop="majorname"
-              label="专业"
-              min-width="150"
-              align="center"
-            />
-          </el-table>
-
-          <div class="selection-info" v-if="batchSelectedStudents.length > 0">
-            <span>已选择: <strong>{{ batchSelectedStudents.length }}</strong> 名学生 ({{ studentGenderCount }})</span>
-          </div>
-        </div>
-        
-        <div class="dorm-section">
-          <div class="section-header">
-            <h3>宿舍选择</h3>
-            <div class="filter-container">
-              <el-select
-                v-model="batchDormType"
-                placeholder="选择宿舍类型"
-                style="width: 150px; margin-right: 10px;"
-                @change="fetchAvailableDorms"
-              >
-                <el-option label="四人间" value="四人间"></el-option>
-                <el-option label="六人间" value="六人间"></el-option>
-                <el-option label="八人间" value="八人间"></el-option>
-                <el-option label="单人间" value="单人间"></el-option>
-                <el-option label="双人间" value="双人间"></el-option>
-              </el-select>
-              
-              <el-select
-                v-model="batchDormSex"
-                placeholder="选择性别要求"
-                style="width: 150px; margin-right: 10px;"
-                @change="fetchAvailableDorms"
-              >
-                <el-option label="男" value="男"></el-option>
-                <el-option label="女" value="女"></el-option>
-              </el-select>
-              
-              <el-select
-                v-model="batchDormBuilding"
-                placeholder="选择宿舍楼"
-                clearable
-                style="width: 150px; margin-right: 10px;"
-                @change="fetchAvailableDorms"
-              >
-                <el-option
-                  v-for="item in dormBuildingOptions"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-              
-              <el-button type="primary" size="small" icon="el-icon-search" @click="fetchAvailableDorms">筛选宿舍</el-button>
-            </div>
-          </div>
-          
-          <el-table
-            v-loading="batchDormsLoading"
-            :data="availableDorms"
-            border
-            style="width: 100%; margin-top: 15px;"
-            height="350px"
-            @selection-change="handleDormSelectionChange"
-          >
-            <el-table-column
-              type="selection"
-              width="55"
-              align="center"
-            />
-            <el-table-column
-              prop="department"
-              label="系别"
-              min-width="120"
-              align="center"
-            />
-            <el-table-column
-              prop="dormitory"
-              label="宿舍楼"
-              min-width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="dormCard"
-              label="宿舍号"
-              min-width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="dormType"
-              label="宿舍类型"
-              min-width="120"
-              align="center"
-            />
-            <el-table-column
-              prop="availableCount"
-              label="可用床位"
-              min-width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="dormsex"
-              label="性别要求"
-              min-width="100"
-              align="center"
-            />
-            <template #empty>
-              <div class="empty-dormitory">
-                <el-empty description="暂无符合条件的宿舍" :image-size="100">
-                  <template #description>
-                    <p>暂无符合条件的宿舍，请更改筛选条件后再试</p>
-                  </template>
-                </el-empty>
-              </div>
-            </template>
-          </el-table>
-
-          <div class="selection-info" v-if="selectedDorms.length > 0">
-            <span>已选宿舍: <strong>{{ selectedDorms.length }}</strong> 间，可用床位: <strong>{{ totalAvailableBeds }}</strong> 个</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="assignment-summary" v-if="selectedDorms.length > 0 && batchSelectedStudents.length > 0">
-        <el-alert
-          :title="`分配信息：${batchSelectedStudents.length}名学生 → ${selectedDorms.length}间宿舍 (总床位：${totalAvailableBeds}个)`"
-          type="success"
-          :closable="false"
-          show-icon
-        />
-      </div>
-      
+    
+    <!-- 添加/编辑宿舍对话框 -->
+    <el-dialog 
+      :title="dormFormTitle" 
+      v-model="dormDialogVisible"
+      width="500px">
+      <el-form :model="dormForm" :rules="dormRules" label-width="100px" ref="dormForm">
+        <el-form-item label="楼栋名称:" prop="buildingName">
+          <el-input v-model="dormForm.buildingName" placeholder="请输入楼栋名称"></el-input>
+        </el-form-item>
+        <el-form-item label="宿舍号:" prop="roomNumber">
+          <el-input v-model="dormForm.roomNumber" placeholder="请输入宿舍号"></el-input>
+        </el-form-item>
+        <el-form-item label="宿舍类型:" prop="type">
+          <el-select v-model="dormForm.type" placeholder="请选择宿舍类型" style="width: 100%">
+            <el-option label="四人间" value="FOUR"></el-option>
+            <el-option label="六人间" value="SIX"></el-option>
+            <el-option label="八人间" value="EIGHT"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="性别:" prop="gender">
+          <el-select v-model="dormForm.gender" placeholder="请选择性别" style="width: 100%">
+            <el-option label="男" value="MALE"></el-option>
+            <el-option label="女" value="FEMALE"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <div style="float: left; color: #E6A23C; font-size: 13px; margin-right: 20px;">
-            <i class="el-icon-warning-outline"></i> 提示：有选择好宿舍号才算分配成功，请确保学生性别与宿舍要求匹配
-          </div>
-          
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span>分配方式：</span>
-            <el-radio-group v-model="assignmentMethod" size="small">
-              <el-radio label="auto">自动分配</el-radio>
-              <el-radio label="manual">手动指定</el-radio>
-            </el-radio-group>
-          </div>
-          
-          <div style="flex-grow: 1;"></div>
-          
-          <el-button @click="batchAssignDialogVisible = false">取 消</el-button>
-          <el-button 
-            type="primary" 
-            @click="executeBatchAssignment"
-            :disabled="batchSelectedStudents.length === 0 || selectedDorms.length === 0"
-          >
-            确认分配
-          </el-button>
-        </div>
+        <span class="dialog-footer">
+          <el-button @click="dormDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitDormForm">确定</el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
@@ -854,902 +370,806 @@
 
 <script>
 import axios from 'axios'
-import { debounce } from 'lodash'
 
 export default {
   name: 'DormitoryManageView',
   data() {
     return {
-      // 学生列表相关
-      studentList: [],
-      tableLoading: false,
-      currentPage: 1,
-      pageSize: 10,
-      total: 0,
-      studentCurrentPage: 1,
-      studentPageSize: 10,
-      studentTotal: 0,
-      searchKeyword: '',
-      
-      // 宿舍相关
-      dormList: [], // 保留用于其他功能
-      dormStudentList: [], // 宿舍内学生列表
-      currentDorm: null, // 当前选中的宿舍
-      
-      // 表单相关
-      dialogVisible: false,
-      dialogTitle: '添加宿舍',
-      dormForm: {
+      // 基础数据
+      activeTab: 'assignment',
+      studentFilter: {
         department: '',
-        dormitory: '',
-        dormCard: '',
-        dormType: '',
-        dormNum: 4,
-        dormPrize: 800,
-        dormsex: ''
+        major: '',
+        className: ''
       },
-      rules: {
-        department: [
-          { required: true, message: '请输入系别', trigger: 'blur' }
-        ],
-        dormitory: [
-          { required: true, message: '请输入宿舍楼', trigger: 'blur' }
-        ],
-        dormCard: [
-          { required: true, message: '请输入宿舍号', trigger: 'blur' }
-        ],
-        dormType: [
-          { required: true, message: '请选择宿舍类型', trigger: 'change' }
-        ],
-        dormNum: [
-          { required: true, message: '请输入宿舍容量', trigger: 'blur' }
-        ],
-        dormsex: [
-          { required: true, message: '请选择性别要求', trigger: 'change' }
-        ]
-      },
-      
-      // 宿舍成员相关
-      membersDialogVisible: false,
-      selectedDorm: null,
-      dormMembers: [],
-      
-      // 分配学生相关
-      assignDialogVisible: false,
-      departmentFilter: '',
-      majorFilter: '',
-      classFilter: '',
       departmentOptions: [],
       majorOptions: [],
       classOptions: [],
-      unassignedStudents: [],
-      studentsLoading: false,
+      assignmentStatus: 'all',
       selectedStudents: [],
+      studentList: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalStudents: 0,
+      dormFilter: {
+        buildingName: '',
+        roomNumber: '',
+        type: '',
+        gender: ''
+      },
+      dormList: [],
+      dormCurrentPage: 1,
+      dormPageSize: 10,
+      totalDorms: 0,
       
-      // 标签页
-      activeTab: 'all',
-      
-      // 批量分配相关
-      batchAssignDialogVisible: false,
-      batchDepartmentFilter: '',
-      batchMajorFilter: '',
-      batchClassFilter: '',
-      batchUnassignedStudents: [],
-      batchStudentsLoading: false,
-      batchSelectedStudents: [],
-      
-      batchDormType: '',
-      batchDormSex: '',
-      batchDormBuilding: '',
-      dormBuildingOptions: [],
+      // 对话框相关数据
+      assignDialogVisible: false,
+      assignForm: {
+        dormType: '',
+        gender: '',
+        dormId: ''
+      },
       availableDorms: [],
-      batchDormsLoading: false,
-      selectedDorms: [],
-      assignmentMethod: 'auto',
       
-      // 选择宿舍类型相关
-      selectDormTypeDialogVisible: false,
-      selectedStudent: null,
-      dormTypeForm: {
-        dormType: ''
+      membersDialogVisible: false,
+      dormMembers: [],
+      
+      dormDialogVisible: false,
+      dormFormTitle: '添加宿舍',
+      dormForm: {
+        id: null,
+        buildingName: '',
+        roomNumber: '',
+        type: '',
+        gender: ''
+      },
+      dormRules: {
+        buildingName: [
+          { required: true, message: '请输入楼栋名称', trigger: 'blur' }
+        ],
+        roomNumber: [
+          { required: true, message: '请输入宿舍号', trigger: 'blur' }
+        ],
+        type: [
+          { required: true, message: '请选择宿舍类型', trigger: 'change' }
+        ],
+        gender: [
+          { required: true, message: '请选择性别', trigger: 'change' }
+        ]
       },
       
-      // 分配宿舍对话框相关
-      assignDormType: '',
-      assignDormBuilding: '',
-      availableDormsList: [],
-      availableDormsLoading: false,
-      
-      // 批量选择宿舍类型相关
-      batchSelectDormDialogVisible: false,
-      batchDormTypeSelection: ''
+      // 当前操作的学生
+      currentStudent: null,
+      loading: false,
+      allStudentsList: []
     }
   },
   created() {
-    // 初始化分页变量
-    this.studentCurrentPage = 1
-    this.studentPageSize = 10
-    
-    this.fetchStudentList()
-    this.fetchDormBuildings()
-    this.fetchFilterOptions()
-    // 使用防抖处理的搜索方法
-    this.debouncedFilterChange = debounce(this.fetchStudentList, 300)
+    // 初始化方法
+    this.loadStudents()
   },
   methods: {
-    // 判断学生是否已经分配宿舍
-    hasAssignedDorm(student) {
-      return student && student.dormitory && student.dormitory !== '' && 
-             student.dorm_number && student.dorm_number !== '';
-    },
-    
-    // 获取学生列表
-    fetchStudentList() {
-      this.tableLoading = true
-      
-      // 根据标签页状态准备参数
-      const params = {
-        page: this.studentCurrentPage,
-        size: this.studentPageSize // 支持10、20、50、100、200、500等不同的每页显示数量
-      };
-      
-      // 只有在搜索框有内容时才添加关键字
-      if (this.searchKeyword && this.searchKeyword.trim().length > 0) {
-        params.keyword = this.searchKeyword;
-      }
-      
-      // 设置API路径
-      let apiPath = '/api/admin/dorm/students';
-      
-      if (this.activeTab === 'assigned') {
-        apiPath = '/api/admin/dorm/assigned-students';
-      } else if (this.activeTab === 'unassigned') {
-        apiPath = '/api/admin/dorm/unassigned-students';
-      }
-      
-      console.log('发送学生列表请求参数:', params);
-      
-      axios.get(apiPath, { params })
-        .then(response => {
-          console.log('学生列表响应:', response.data)
-          const { data } = response.data
-          if (data && data.list) {
-            this.studentList = data.list;
-            this.total = data.total;
-            this.studentTotal = data.total;
-            console.log('处理后的学生列表:', this.studentList, '总数:', this.studentTotal);
-          } else {
-            this.studentList = []
-            this.total = 0
-            this.studentTotal = 0
-            this.$message.info('暂无学生数据')
-          }
-          this.tableLoading = false
-        })
-        .catch(error => {
-          console.error('获取学生列表失败', error)
-          this.tableLoading = false
-          this.$message.error('获取学生列表失败')
-        })
-    },
-    
-    // 搜索
-    handleSearch() {
-      console.log('执行搜索，关键字:', this.searchKeyword);
-      this.studentCurrentPage = 1;
-      this.fetchStudentList();
-    },
-    
-    // 重置搜索
-    resetSearch() {
-      this.searchKeyword = '';
-      this.studentCurrentPage = 1;
-      this.fetchStudentList();
-    },
-    
-    // 分页
-    handleSizeChange(val) {
-      this.studentPageSize = val
-      this.fetchStudentList()
-    },
-    
-    handleCurrentChange(val) {
-      this.studentCurrentPage = val
-      this.fetchStudentList()
-    },
-    
-    // 学生表格分页
-    handleStudentSizeChange(val) {
-      this.studentPageSize = val
-      this.fetchStudentList()
-    },
-    
-    handleStudentCurrentChange(val) {
-      this.studentCurrentPage = val
-      this.fetchStudentList()
-    },
-    
-    // 处理标签页切换
-    handleTabChange() {
-      console.log('切换到标签页:', this.activeTab);
-      this.studentCurrentPage = 1;
-      this.fetchStudentList();
-    },
-    
-    // 打开选择宿舍类型对话框
-    openSelectDormTypeDialog(student) {
-      this.selectedStudent = student;
-      this.dormTypeForm.dormType = student.selectDorm || '';
-      this.selectDormTypeDialogVisible = true;
-    },
-    
-    // 提交宿舍类型选择
-    submitSelectDormType() {
-      if (!this.dormTypeForm.dormType) {
-        this.$message.warning('请选择宿舍类型');
-        return;
-      }
-      
-      const studentNumber = this.selectedStudent.studentNumber;
-      const selectDorm = this.dormTypeForm.dormType;
-      
-      axios.post('/api/admin/dorm/update-selectdorm', {
-        studentNumber,
-        selectDorm
-      })
-        .then(() => {
-          this.$message.success('宿舍类型选择已更新');
-          this.selectDormTypeDialogVisible = false;
-          
-          // 更新学生列表中的数据
-          const index = this.studentList.findIndex(s => s.studentNumber === studentNumber);
-          if (index !== -1) {
-            this.studentList[index].selectDorm = selectDorm;
-          }
-        })
-        .catch(error => {
-          console.error('更新宿舍类型选择失败', error);
-          this.$message.error('更新宿舍类型选择失败');
-        });
-    },
-    
-    // 打开分配宿舍对话框
-    openAssignToStudentDialog(student) {
-      this.selectedStudent = student;
-      this.assignDialogVisible = true;
-      this.assignDormType = student.selectDorm || '';
-      this.assignDormBuilding = '';
-      this.selectedDorms = [];
-      this.fetchAvailableDorms();
-    },
-    
-    // 打开重新分配宿舍对话框
-    openReassignDialog(student) {
-      this.selectedStudent = student;
-      this.assignDialogVisible = true;
-      this.assignDormType = student.selectDorm || '';
-      this.assignDormBuilding = '';
-      this.selectedDorms = [];
-      this.fetchAvailableDorms();
-    },
-    
-    // 获取可用宿舍
-    fetchAvailableDorms() {
-      if (!this.selectedStudent) {
-        return;
-      }
-      
-      this.availableDormsLoading = true;
-      this.availableDormsList = [];
-      
-      const params = {
-        dormType: this.assignDormType || undefined,
-        dormsex: this.selectedStudent.sex,
-        dormitory: this.assignDormBuilding || undefined
-      };
-      
-      axios.get('/api/admin/dorm/available', { params })
-        .then(response => {
-          console.log('可用宿舍响应:', response.data)
-          const { data } = response.data
-          
-          if (data) {
-            // 处理不同的数据结构
-            let dormData = Array.isArray(data) ? data : 
-                          (data.list ? data.list : []);
-            
-            // 计算可用床位
-            this.availableDormsList = dormData.map(dorm => {
-              const members = dorm.members && Array.isArray(dorm.members) ? dorm.members : [];
-              return {
-                ...dorm,
-                availableCount: dorm.dormNum - members.length
-              };
-            }).filter(dorm => dorm.availableCount > 0);
-            
-            console.log('处理后的可用宿舍:', this.availableDormsList);
-          }
-          
-          this.availableDormsLoading = false;
-        })
-        .catch(error => {
-          console.error('获取可用宿舍失败', error);
-          this.availableDormsLoading = false;
-          this.$message.error('获取可用宿舍失败');
-        });
-    },
-    
-    // 宿舍选择变化
-    handleDormSelectionChange(selection) {
-      this.selectedDorms = selection;
-    },
-    
-    // 分配学生到宿舍
-    assignStudentToDorm() {
-      if (this.selectedDorms.length !== 1) {
-        this.$message.warning('请选择一个宿舍');
-        return;
-      }
-      
-      const dorm = this.selectedDorms[0];
-      
-      // 检查性别匹配
-      if (this.selectedStudent.sex !== dorm.dormsex) {
-        this.$confirm(`学生性别(${this.selectedStudent.sex})与宿舍要求(${dorm.dormsex})不匹配，是否继续？`, '警告', {
-          confirmButtonText: '继续',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.submitDormAssignment(dorm);
-        }).catch(() => {
-          // 取消分配
-        });
+    // Tab切换处理
+    handleTabChange(tab) {
+      if (tab.name === 'information') {
+        this.loadDorms()
       } else {
-        this.submitDormAssignment(dorm);
+        this.loadStudents()
       }
     },
+  
     
-    // 提交宿舍分配
-    submitDormAssignment(dorm) {
-      axios.post('/api/admin/dorm/assign', {
-        studentNumbers: [this.selectedStudent.studentNumber],
-        dormType: dorm.dormType,
-        dormitory: dorm.dormitory,
-        dormCard: dorm.dormCard
-      })
-        .then(() => {
-          this.$message.success('学生已成功分配到宿舍');
-          this.assignDialogVisible = false;
+    handleDepartmentChange() {
+      // 清空专业和班级选择
+      this.studentFilter.major = ''
+      this.studentFilter.className = ''
+      this.majorOptions = []
+      this.classOptions = []
+      
+      if (this.studentFilter.department) {
+        axios.get(`/api/admin/majors?department=${this.studentFilter.department}`)
+          .then(response => {
+            this.majorOptions = response.data.map(major => ({
+              value: major,
+              label: major
+            }))
+          })
+          .catch(error => {
+            console.error('获取专业信息失败:', error)
+            this.$message.error('获取专业信息失败')
+          })
+      }
+      
+      // 触发搜索
+      this.searchStudents()
+    },
+    
+    handleMajorChange() {
+      // 清空班级选择
+      this.studentFilter.className = ''
+      this.classOptions = []
+      
+      if (this.studentFilter.major) {
+        axios.get(`/api/admin/classes?department=${this.studentFilter.department}&major=${this.studentFilter.major}`)
+          .then(response => {
+            this.classOptions = response.data.map(cls => ({
+              value: cls,
+              label: cls
+            }))
+          })
+          .catch(error => {
+            console.error('获取班级信息失败:', error)
+            this.$message.error('获取班级信息失败')
+          })
+      }
+      
+      // 触发搜索
+      this.searchStudents()
+    },
+    
+    // 学生相关方法
+    loadStudents() {
+      this.loading = true;
+      console.log('开始加载学生数据, 当前状态:', this.assignmentStatus);
+      
+      // 不需要翻页参数，因为后端接口没有实现分页
+      const params = {
+        status: this.assignmentStatus === 'all' ? null : this.assignmentStatus
+      };
+      
+      console.log('请求参数:', params);
+      
+      // 直接调用后端接口
+      axios.get('/api/admin/dorm/students', { params })
+        .then(response => {
+          console.log('后端返回的原始数据:', response.data);
           
-          // 更新学生数据
-          const index = this.studentList.findIndex(s => s.studentNumber === this.selectedStudent.studentNumber);
-          if (index !== -1) {
-            this.studentList[index].dormitory = dorm.dormitory;
-            this.studentList[index].dorm_number = dorm.dormCard;
+          // 处理后端返回的数据格式
+          if (response.data.code === 200 && response.data.data) {
+            const responseData = response.data.data;
+            
+            // 提取学生列表数据和总数
+            let allStudents = [];
+            let total = 0;
+            
+            if (responseData.list && Array.isArray(responseData.list)) {
+              allStudents = responseData.list;
+              total = responseData.total || allStudents.length;
+            } else {
+              console.error('无法从响应中识别学生列表数据:', responseData);
+            }
+            
+            console.log('提取的学生列表数据:', allStudents);
+            
+            // 格式化所有学生数据
+            this.allStudentsList = allStudents.map(student => {
+              return this.formatStudentData(student);
+            });
+            
+            this.totalStudents = total;
+            
+            // 本地分页处理
+            this.applyPagination();
+          } else {
+            console.error('后端返回错误或数据格式异常:', response.data);
+            this.$message.error('获取学生数据失败: ' + (response.data.message || '未知错误'));
+            this.studentList = [];
+            this.totalStudents = 0;
           }
           
-          // 如果是在"未分配"标签页，刷新列表
-          if (this.activeTab === 'unassigned') {
-            this.fetchStudentList();
-          }
+          this.loading = false;
         })
         .catch(error => {
-          console.error('分配学生失败', error);
-          this.$message.error('分配学生失败');
+          console.error('获取学生列表失败:', error);
+          this.$message.error('获取学生列表失败: ' + (error.response?.data?.message || error.message));
+          this.studentList = [];
+          this.totalStudents = 0;
+          this.loading = false;
         });
     },
     
-    // 从宿舍移除学生
-    handleRemoveFromDorm(student) {
-      this.$confirm(`确定要将学生 ${student.studentName} 从宿舍中移除吗？`, '提示', {
+    // 应用本地分页
+    applyPagination() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      
+      // 从全部数据中截取当前页数据
+      this.studentList = this.allStudentsList.slice(start, end);
+      console.log(`应用本地分页: 第${this.currentPage}页，每页${this.pageSize}条，显示${start+1}-${Math.min(end, this.totalStudents)}条`);
+    },
+    
+    handleSizeChange(size) {
+      this.pageSize = size;
+      this.applyPagination();
+    },
+    
+    handleCurrentChange(page) {
+      this.currentPage = page;
+      this.applyPagination();
+    },
+    
+    // 格式化单个学生数据
+    formatStudentData(student) {
+      // 添加日志来查看输入
+      console.log('正在格式化学生数据:', student);
+      
+      // 检查输入有效性
+      if (!student) {
+        console.error('收到无效的学生数据(null/undefined)');
+        return {
+          studentNumber: '未知',
+          name: '未知',
+          gender: 'UNKNOWN',
+          dormInfo: null
+        };
+      }
+      
+      // 创建一个新对象，添加所需字段
+      const formattedStudent = {};
+       
+      // 学号
+      formattedStudent.studentNumber = student.studentNumber || '';
+      
+      // 姓名
+      formattedStudent.name = student.studentName || '';
+      
+      // 性别 (转换为前端需要的格式)
+      formattedStudent.gender = student.sex === '男' ? 'MALE' : student.sex === '女' ? 'FEMALE' : 'UNKNOWN';
+      
+      // 系部
+      formattedStudent.department = student.department || '';
+      
+      // 专业
+      formattedStudent.major = student.majorname || '';
+      
+      // 班级
+      formattedStudent.className = student.classroom_id || '';
+      
+      // 处理宿舍类型 - 无论是否有宿舍信息，都尝试提取宿舍类型，这样在"继续分配"时可以使用
+      formattedStudent.dormType = student.dormType || '';
+      console.log('提取的宿舍类型:', formattedStudent.dormType);
+      
+      // 处理宿舍信息
+      // 注意：学生表中的dormitory和dormNumber字段已删除
+      // 现在宿舍信息应该从student_dorm关联表中获取
+      if (student.studentDorm && student.studentDorm.dormitory && student.studentDorm.dormCard) {
+        formattedStudent.dormitory = student.studentDorm.dormitory;
+        formattedStudent.dormNumber = student.studentDorm.dormCard;
+        
+        // 处理宿舍类型
+        if (student.studentDorm.dormType) {
+          // 宿舍信息中包含宿舍类型
+          let dormTypeText = '';
+          if (student.studentDorm.dormType === 'FOUR') {
+            dormTypeText = '四人间';
+          } else if (student.studentDorm.dormType === 'SIX') {
+            dormTypeText = '六人间';
+          } else if (student.studentDorm.dormType === 'EIGHT') {
+            dormTypeText = '八人间';
+          } else {
+            dormTypeText = student.studentDorm.dormType;
+          }
+          formattedStudent.dormInfo = `${student.studentDorm.dormitory} - ${student.studentDorm.dormCard} (${dormTypeText})`;
+        } else {
+          formattedStudent.dormInfo = `${student.studentDorm.dormitory} - ${student.studentDorm.dormCard}`;
+        }
+      } else {
+        formattedStudent.dormInfo = null;
+      }
+      
+      // 分配状态
+      formattedStudent.assignmentStatus = student.assignmentStatus || 'unassigned';
+      
+      console.log('格式化后的学生数据:', formattedStudent);
+      return formattedStudent;
+    },
+    
+    searchStudents() {
+      this.currentPage = 1
+      this.loadStudents()
+    },
+    
+    resetFilter() {
+      this.studentFilter = {
+        department: '',
+        major: '',
+        className: ''
+      }
+      this.majorOptions = []
+      this.classOptions = []
+      this.searchStudents()
+    },
+    
+    handleStatusChange() {
+      this.currentPage = 1
+      this.loadStudents()
+    },
+    
+    handleSelectionChange(selection) {
+      this.selectedStudents = selection
+    },
+    
+    // 学生宿舍分配相关方法
+    assignDormToStudent(student) {
+      this.currentStudent = student
+      
+      // 如果是待分配状态，从学生现有数据中获取宿舍类型
+      if (this.isPendingStudent(student)) {
+        this.assignForm = {
+          dormType: student.dormType || 'FOUR',  // 优先使用学生已有的宿舍类型，若没有则默认四人间
+          gender: student.gender,
+          dormId: ''
+        }
+        console.log('继续分配宿舍，使用已有宿舍类型:', student.dormType);
+      } else {
+        // 未分配状态，设置一个默认的宿舍类型
+        this.assignForm = {
+          dormType: 'FOUR',  // 默认四人间
+          gender: student.gender,
+          dormId: ''
+        }
+        console.log('新分配宿舍，使用默认宿舍类型: FOUR');
+      }
+      
+      this.assignDialogVisible = true
+    },
+     
+    reassignDorm(student) {
+      this.currentStudent = student
+      this.assignForm = {
+        dormType: student.dormType || 'FOUR',  // 优先使用学生已有的宿舍类型，若没有则默认四人间
+        gender: student.gender,
+        dormId: ''
+      }
+      this.assignDialogVisible = true
+      this.$message.warning('重新分配宿舍将会取消学生的当前宿舍分配')
+    },
+     
+    removeDormAssignment(student) {
+      this.$confirm('确定要移除该学生的宿舍分配吗?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        axios.post('/api/admin/dorm/remove-student', {
-          studentNumber: student.studentNumber
-        })
+        axios.delete(`/api/admin/dorm/assign/${student.studentNumber}`)
           .then(() => {
-            this.$message.success('学生已从宿舍移除');
-            
-            // 更新学生数据
-            const index = this.studentList.findIndex(s => s.studentNumber === student.studentNumber);
-            if (index !== -1) {
-              this.studentList[index].dormitory = '';
-              this.studentList[index].dorm_number = '';
-            }
-            
-            // 如果是在"已分配"标签页，刷新列表
-            if (this.activeTab === 'assigned') {
-              this.fetchStudentList();
-            }
+            this.$message.success('移除宿舍分配成功')
+            this.loadStudents()
           })
           .catch(error => {
-            console.error('移除学生失败', error);
-            this.$message.error('移除学生失败');
-          });
+            console.error('移除宿舍分配失败:', error)
+            this.$message.error('移除宿舍分配失败')
+          })
       }).catch(() => {
-        // 取消移除
-      });
+        // 取消操作
+      })
+    },
+
+    // 执行宿舍分配（提交分配表单）
+    confirmAssignDorm() {
+      // 表单校验
+      if (!this.assignForm.dormType) {
+        this.$message.warning('请选择宿舍类型')
+        return
+      }
+      
+      if (!this.assignForm.dormId) {
+        this.$message.warning('请选择宿舍')
+        return
+      }
+      
+      // 从已选择的宿舍中获取宿舍信息
+      const selectedDorm = this.availableDorms.find(dorm => dorm.id === this.assignForm.dormId);
+      if (!selectedDorm) {
+        this.$message.error('无法获取所选宿舍信息');
+        return;
+      }
+      
+      console.log('已选择的宿舍信息:', selectedDorm);
+      
+      // 区分单个分配和批量分配
+      if (this.currentStudent) {
+        // 单个学生分配
+        const data = {
+          studentNumber: this.currentStudent.studentNumber,
+          dormType: this.assignForm.dormType,
+          dormitory: selectedDorm.buildingName,  // 宿舍楼
+          dormCard: selectedDorm.roomNumber   // 宿舍号
+        }
+        
+        console.log('提交的宿舍分配数据:', data);
+        
+        axios.post('/api/admin/dorm/assign', data)
+          .then((response) => {
+            console.log('宿舍分配响应:', response);
+            this.$message.success('分配宿舍成功')
+            this.assignDialogVisible = false
+            this.currentStudent = null
+            this.loadStudents()
+          })
+          .catch(error => {
+            console.error('分配宿舍失败:', error)
+            this.$message.error('分配宿舍失败: ' + (error.response?.data?.message || '未知错误'))
+          })
+      } else {
+        // 批量分配
+        const studentNumbers = this.selectedStudents.map(student => student.studentNumber)
+        const data = {
+          studentNumbers: studentNumbers,
+          dormType: this.assignForm.dormType,
+          dormitory: selectedDorm.buildingName,  // 宿舍楼
+          dormCard: selectedDorm.roomNumber   // 宿舍号
+        }
+        
+        console.log('提交的批量宿舍分配数据:', data);
+        
+        axios.post('/api/admin/dorm/assign/batch', data)
+          .then(response => {
+            const { success, failed } = response.data
+            if (success > 0 && failed === 0) {
+              this.$message.success(`成功为 ${success} 名学生分配宿舍`)
+            } else if (success > 0 && failed > 0) {
+              this.$message.warning(`${success} 名学生分配成功，${failed} 名学生分配失败`)
+            } else {
+              this.$message.error(`所有学生分配失败`)
+            }
+            this.assignDialogVisible = false
+            this.loadStudents()
+          })
+          .catch(error => {
+            console.error('批量分配宿舍失败:', error)
+            this.$message.error('批量分配宿舍失败: ' + (error.response?.data?.message || '未知错误'))
+          })
+      }
     },
     
-    // 获取宿舍楼选项
-    fetchDormBuildings() {
-      axios.get('/api/admin/dorm/buildings')
+    // 宿舍分配对话框相关方法
+    handleDialogOpen() {
+      // 对话框打开时，如果已经有宿舍类型，自动加载可用宿舍
+      if (this.assignForm.dormType) {
+        this.loadAvailableDorms();
+      }
+    },
+    
+    handleDormTypeChange() {
+      // 根据宿舍类型和学生性别查询可用宿舍
+      this.assignForm.dormId = ''
+      this.loadAvailableDorms()
+    },
+    
+    loadAvailableDorms() {
+      if (!this.assignForm.dormType || !this.assignForm.gender) {
+        this.availableDorms = []
+        return
+      }
+      
+      const params = {
+        dormType: this.assignForm.dormType,
+        dormsex: this.getDormSexParam(this.assignForm.gender)
+      };
+      
+      console.log('加载可用宿舍，请求参数:', params);
+      
+      axios.get('/api/admin/dorm/available', { params })
         .then(response => {
-          console.log('宿舍楼响应:', response.data);
-          if (response.data.code === 200 && response.data.data) {
-            if (Array.isArray(response.data.data)) {
-              this.dormBuildingOptions = response.data.data;
-            } else if (Array.isArray(response.data.data.list)) {
-              this.dormBuildingOptions = response.data.data.list.map(item => item.dormitory);
-            } else {
-              // 尝试查找数组字段
-              const possibleArrays = ['buildings', 'dormitories', 'list'];
-              for (const field of possibleArrays) {
-                if (Array.isArray(response.data.data[field])) {
-                  this.dormBuildingOptions = response.data.data[field];
-                  break;
-                }
-              }
-            }
+          // 检查响应格式
+          console.log('完整响应数据:', response);
+          let dormsData = [];
+          
+          // 判断响应格式并提取数据
+          if (response.data && response.data.code === 200 && response.data.data) {
+            dormsData = response.data.data;
+            console.log('提取的可用宿舍数据:', dormsData);
+          } else if (Array.isArray(response.data)) {
+            dormsData = response.data;
+            console.log('提取的可用宿舍数据(数组格式):', dormsData);
+          } else {
+            console.error('无法识别的响应格式:', response.data);
+            this.$message.error('获取宿舍数据格式错误');
+            return;
           }
           
-          if (!this.dormBuildingOptions || this.dormBuildingOptions.length === 0) {
-            this.fetchDormBuildingsFallback();
+          // 转换字段名称以匹配前端期望的格式
+          this.availableDorms = dormsData.map(dorm => {
+            return {
+              id: dorm.id || dorm.dormCard, // 使用dormCard作为备选ID
+              buildingName: dorm.dormitory || '未知楼栋',
+              roomNumber: dorm.dormCard || '未知房间号',
+              capacity: dorm.dormNum || 0,
+              occupied: dorm.members ? dorm.members.length : 0,
+              type: dorm.dormType || this.assignForm.dormType,
+              gender: dorm.dormsex === '男' ? 'MALE' : dorm.dormsex === '女' ? 'FEMALE' : ''
+            };
+          });
+          
+          console.log('转换后的可用宿舍数据:', this.availableDorms);
+        })
+        .catch(error => {
+          console.error('获取可用宿舍失败:', error)
+          this.$message.error('获取可用宿舍失败')
+        })
+    },
+    
+    showAssignDialog() {
+      if (this.selectedStudents.length === 0) {
+        this.$message.warning('请选择学生')
+        return
+      }
+      
+      // 检查所选学生性别是否一致
+      const genders = [...new Set(this.selectedStudents.map(student => student.gender))]
+      if (genders.length > 1) {
+        this.$message.error('批量分配宿舍要求所选学生性别一致')
+        return
+      }
+      
+      this.assignForm = {
+        dormType: 'FOUR',  // 默认四人间
+        gender: genders[0],
+        dormId: ''
+      }
+      this.assignDialogVisible = true
+    },
+    
+    // 宿舍相关方法
+    loadDorms() {
+      const params = {
+        page: this.dormCurrentPage,
+        size: this.dormPageSize,
+        keyword: this.dormFilter.roomNumber || this.dormFilter.buildingName || null,
+        dormsex: this.getDormSexParam(this.dormFilter.gender)
+      }
+      
+      axios.get('/api/admin/dorm/list', { params })
+        .then(response => {
+          // 处理后端返回的数据格式
+          if (response.data.code === 200 && response.data.data) {
+            const responseData = response.data.data;
+            this.dormList = responseData.list || [];
+            this.totalDorms = responseData.total || 0;
+          } else {
+            // 兜底处理
+            this.dormList = [];
+            this.totalDorms = 0;
+            console.error('未知的宿舍数据格式:', response.data);
           }
         })
-        .catch(() => {
-          this.fetchDormBuildingsFallback();
+        .catch(error => {
+          console.error('获取宿舍列表失败:', error);
+          this.$message.error('获取宿舍列表失败');
         });
     },
     
-    // 获取宿舍楼备选方案
-    fetchDormBuildingsFallback() {
-      // 从宿舍列表提取或使用默认值
-      axios.get('/api/admin/dorm/list', {
-        params: { page: 1, size: 100 }
-      }).then(response => {
-        if (response.data.code === 200 && response.data.data && response.data.data.list) {
-          const buildingSet = new Set();
-          response.data.data.list.forEach(dorm => {
-            if (dorm.dormitory) {
-              buildingSet.add(dorm.dormitory);
-            }
-          });
-          this.dormBuildingOptions = Array.from(buildingSet);
-        } else {
-          this.dormBuildingOptions = ['1号楼', '2号楼', '3号楼', '4号楼', '5号楼'];
-        }
-      }).catch(() => {
-        this.dormBuildingOptions = ['1号楼', '2号楼', '3号楼', '4号楼', '5号楼'];
-      });
+    // 将前端性别参数转换为后端参数格式
+    getDormSexParam(gender) {
+      if (!gender) return null;
+      // 处理中文输入
+      if (gender === '男' || gender === '女') {
+        return gender === '男' ? 'MALE' : 'FEMALE';
+      }
+      // 处理英文输入
+      if (gender === 'MALE' || gender === 'FEMALE') {
+        return gender;
+      }
+      return null;
     },
     
-    // 获取筛选选项
-    fetchFilterOptions() {
-      axios.get('/api/admin/dorm/filter-options')
+    searchDorms() {
+      this.dormCurrentPage = 1
+      this.loadDorms()
+    },
+    
+    resetDormFilter() {
+      this.dormFilter = {
+        buildingName: '',
+        roomNumber: '',
+        type: '',
+        gender: ''
+      }
+      this.searchDorms()
+    },
+    
+    handleDormSizeChange(size) {
+      this.dormPageSize = size
+      this.loadDorms()
+    },
+    
+    handleDormCurrentChange(page) {
+      this.dormCurrentPage = page
+      this.loadDorms()
+    },
+    
+    // 宿舍成员查看
+    viewDormMembers(dorm) {
+      axios.get(`/api/admin/dorms/${dorm.id}/students`)
         .then(response => {
-          const { data } = response.data
-          this.departmentOptions = data.departments || []
-          this.majorOptions = data.majors || []
-          this.classOptions = data.classrooms || []
+          this.dormMembers = response.data
+          this.membersDialogVisible = true
         })
-        .catch(() => {
-          // 提供默认选项
-          this.departmentOptions = ['计算机系', '机械系', '电子系']
-          this.majorOptions = ['软件工程', '计算机科学与技术', '人工智能']
-          this.classOptions = [
-            { id: '1', name: '计算机2101' },
-            { id: '2', name: '计算机2102' },
-            { id: '3', name: '软件2101' }
-          ]
+        .catch(error => {
+          console.error('获取宿舍成员失败:', error)
+          this.$message.error('获取宿舍成员失败')
         })
     },
     
-    // 根据当前标签页状态返回空表格提示
-    getEmptyTableTip() {
-      if (this.searchKeyword) {
-        return `没有找到匹配"${this.searchKeyword}"的学生`;
-      }
-      
-      switch (this.activeTab) {
-        case 'assigned':
-          return '暂无已分配宿舍的学生';
-        case 'unassigned':
-          return '所有学生均已分配宿舍';
-        default:
-          return '暂无学生数据';
-      }
-    },
-    
-    // 保留原有的宿舍管理功能
-    
-    // 添加宿舍
-    handleAddDorm() {
-      this.dialogTitle = '添加宿舍'
+    // 宿舍添加/编辑
+    showAddDormDialog() {
+      this.dormFormTitle = '添加宿舍'
       this.dormForm = {
-        department: '',
-        dormitory: '',
-        dormCard: '',
-        dormType: '',
-        dormNum: 4,
-        dormPrize: 800,
-        dormsex: ''
+        id: null,
+        buildingName: '',
+        roomNumber: '',
+        type: '',
+        gender: ''
       }
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        if (this.$refs.dormForm) {
-          this.$refs.dormForm.clearValidate()
-        }
-      })
+      this.dormDialogVisible = true
     },
     
-    // 编辑宿舍
-    handleEditDorm(row) {
-      this.dialogTitle = '编辑宿舍'
-      this.dormForm = { ...row }
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        if (this.$refs.dormForm) {
-          this.$refs.dormForm.clearValidate()
-        }
-      })
+    editDorm(dorm) {
+      this.dormFormTitle = '编辑宿舍'
+      this.dormForm = { ...dorm }
+      this.dormDialogVisible = true
     },
     
-    // 提交宿舍表单
     submitDormForm() {
       this.$refs.dormForm.validate(valid => {
         if (valid) {
-          const isEdit = this.dormForm.dormitory && this.dormForm.dormCard
-          const method = isEdit ? 'put' : 'post'
-          const url = isEdit ? '/api/admin/dorm/update' : '/api/admin/dorm/add'
-          
-          axios[method](url, this.dormForm)
-            .then(() => {
-              this.$message.success(isEdit ? '宿舍更新成功' : '宿舍添加成功')
-              this.dialogVisible = false
-              // 添加或编辑宿舍后重新获取可用宿舍
-              if (this.assignDialogVisible) {
-                this.fetchAvailableDorms()
-              }
-            })
-            .catch(error => {
-              console.error(isEdit ? '更新宿舍失败' : '添加宿舍失败', error)
-              this.$message.error(isEdit ? '更新宿舍失败' : '添加宿舍失败')
-            })
-        }
-      })
-    },
-    
-    // 打开批量分配对话框
-    openBatchAssignDialog() {
-      this.batchAssignDialogVisible = true
-      this.batchDepartmentFilter = ''
-      this.batchMajorFilter = ''
-      this.batchClassFilter = ''
-      this.batchSelectedStudents = []
-      this.batchDormType = ''
-      this.batchDormSex = ''
-      this.batchDormBuilding = ''
-      this.selectedDorms = []
-      
-      this.fetchBatchUnassignedStudents()
-    },
-    
-    // 获取批量分配的未分配学生
-    fetchBatchUnassignedStudents() {
-      this.batchStudentsLoading = true
-      axios.get('/api/admin/dorm/unassigned-students', {
-        params: {
-          page: 1,
-          size: 1000, // 加载更多记录用于批量操作
-          department: this.batchDepartmentFilter || undefined,
-          majorname: this.batchMajorFilter || undefined,
-          classroomId: this.batchClassFilter || undefined
-        }
-      }).then(response => {
-        console.log('批量未分配学生响应:', response.data)
-        const { data } = response.data
-        if (data && data.list) {
-          this.batchUnassignedStudents = data.list
-        } else {
-          this.batchUnassignedStudents = []
-          this.$message.info('暂无未分配学生')
-        }
-        this.batchStudentsLoading = false
-      }).catch(error => {
-        console.error('获取未分配学生失败', error)
-        this.batchStudentsLoading = false
-        this.$message.error('获取未分配学生失败')
-      })
-    },
-    
-    // 批量筛选变化
-    handleBatchFilterChange() {
-      this.batchSelectedStudents = []
-      this.fetchBatchUnassignedStudents()
-    },
-    
-    // 批量学生选择变化
-    handleBatchSelectionChange(val) {
-      this.batchSelectedStudents = val
-    },
-    
-    // 获取宿舍内学生列表
-    fetchDormStudentList() {
-      if (!this.currentDorm) return;
-      
-      this.studentsLoading = true;
-      const params = {
-        page: this.studentCurrentPage,
-        size: this.studentPageSize,
-        dormitory: this.currentDorm.dormitory,
-        dormCard: this.currentDorm.dormCard
-      };
-      
-      axios.get('/api/admin/dorm/assigned-students', { params })
-        .then(response => {
-          const { data } = response.data;
-          if (data && data.list) {
-            this.dormStudentList = data.list;
-            this.studentTotal = data.total;
+          if (this.dormForm.id) {
+            // 更新宿舍
+            axios.put(`/api/admin/dorms/${this.dormForm.id}`, this.dormForm)
+              .then(() => {
+                this.$message.success('宿舍信息更新成功')
+                this.dormDialogVisible = false
+                this.loadDorms()
+              })
+              .catch(error => {
+                console.error('更新宿舍信息失败:', error)
+                this.$message.error('更新宿舍信息失败: ' + (error.response?.data?.message || '未知错误'))
+              })
           } else {
-            this.dormStudentList = [];
-            this.studentTotal = 0;
-            this.$message.info('宿舍内暂无学生');
+            // 新增宿舍
+            axios.post('/api/admin/dorms', this.dormForm)
+              .then(() => {
+                this.$message.success('宿舍添加成功')
+                this.dormDialogVisible = false
+                this.loadDorms()
+              })
+              .catch(error => {
+                console.error('添加宿舍失败:', error)
+                this.$message.error('添加宿舍失败: ' + (error.response?.data?.message || '未知错误'))
+              })
           }
-          this.studentsLoading = false;
-        })
-        .catch(error => {
-          console.error('获取宿舍学生失败', error);
-          this.studentsLoading = false;
-          this.$message.error('获取宿舍学生失败');
-        });
-    },
-  },
-  
-  computed: {
-    // 计算所选学生的性别统计
-    studentGenderCount() {
-      if (!this.batchSelectedStudents.length) return '';
-      
-      const maleCount = this.batchSelectedStudents.filter(s => s.sex === '男').length;
-      const femaleCount = this.batchSelectedStudents.filter(s => s.sex === '女').length;
-      
-      return `男:${maleCount}, 女:${femaleCount}`;
+        }
+      })
     },
     
-    // 计算所选宿舍的总可用床位
-    totalAvailableBeds() {
-      return this.selectedDorms.reduce((sum, dorm) => 
-        sum + (dorm.dormNum - (dorm.members ? dorm.members.length : 0)), 0);
+    // 宿舍删除
+    confirmDeleteDorm(dorm) {
+      this.$confirm(`确定要删除宿舍 "${dorm.buildingName} - ${dorm.roomNumber}" 吗?`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        axios.delete(`/api/admin/dorms/${dorm.id}`)
+          .then(() => {
+            this.$message.success('宿舍删除成功')
+            this.loadDorms()
+          })
+          .catch(error => {
+            console.error('删除宿舍失败:', error)
+            if (error.response && error.response.status === 400) {
+              this.$message.error('该宿舍内还有学生，无法删除')
+            } else {
+              this.$message.error('删除宿舍失败')
+            }
+          })
+      }).catch(() => {
+        // 取消操作
+      })
+    },
+    
+    openAssignDormDialog(student) {
+      this.currentStudent = student
+      this.assignForm = {
+        dormType: student.dormType || 'FOUR',  // 设置默认宿舍类型
+        gender: student.gender,
+        dormId: ''
+      }
+      this.assignDialogVisible = true
+    },
+    
+    // 获取学生状态文本
+    getStudentStatusText(student) {
+      if (student.assignmentStatus === 'assigned') {
+        return '已分配';
+      } else if (student.assignmentStatus === 'pending') {
+        return '待分配';
+      } else {
+        return '未分配';
+      }
+    },
+    
+    // 获取学生状态标签类型
+    getStudentStatusType(student) {
+      if (student.assignmentStatus === 'assigned') {
+        return 'success';
+      } else if (student.assignmentStatus === 'pending') {
+        return 'warning';
+      } else {
+        return 'info';
+      }
+    },
+    
+    // 判断是否为待分配状态的学生
+    isPendingStudent(student) {
+      console.log('检查学生是否为待分配状态:', student);
+      return student.assignmentStatus === 'pending';
     }
   }
 }
 </script>
 
-<style scoped>
-.dorm-manage-container {
-  padding: 20px;
-}
-
-.dorm-card {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.filter-container {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 15px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  flex-wrap: wrap;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.dorm-info {
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-}
-
-.student-info {
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  border-left: 3px solid #409EFF;
-}
-
-.student-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-.student-details p {
-  margin: 5px 0;
-}
-
-.empty-members {
-  padding: 30px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  background-color: #fafafa;
-  border-radius: 4px;
-}
-
-.empty-dormitory {
-  padding: 30px 0;
-  height: 200px;
-  background-color: #fafafa;
-  border-radius: 4px;
-}
-
-.empty-table-tip {
-  padding: 40px 0;
-  background-color: #fafafa;
-}
-
-.tip-extra {
-  margin-top: 10px;
-  color: #909399;
-  font-size: 14px;
-}
-
-/* 标签页样式增强 */
-:deep(.el-tabs__item) {
-  position: relative;
-  padding: 0 20px;
-  height: 40px;
-  font-size: 15px;
-}
-
-:deep(.el-tabs__item.is-active) {
-  font-weight: bold;
-}
-
-:deep(.el-tabs__active-bar) {
-  height: 3px;
-  border-radius: 3px;
-}
-
-.el-table {
-  margin-bottom: 15px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.action-buttons .el-button {
-  margin: 2px !important;
-}
-
-/* 批量分配对话框样式 */
-.batch-assign-dialog :deep(.el-dialog__body) {
-  padding: 10px 20px;
-}
-
-.batch-assign-container {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.students-section, 
-.dorm-section {
-  flex: 1;
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  padding: 15px;
-  background-color: #f9f9f9;
-}
-
-.section-header {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 15px;
-}
-
-.section-header h3 {
-  margin: 0 0 15px 0;
-  color: #303133;
-  font-size: 16px;
-  border-left: 3px solid #409EFF;
-  padding-left: 10px;
-}
-
-.section-header .filter-container {
-  padding: 10px;
-  margin-bottom: 0;
-}
-
-.assignment-summary {
-  margin: 15px 0;
-}
-
-.selection-info {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background-color: #f0f9eb;
-  border-radius: 4px;
-  color: #67c23a;
-  font-size: 14px;
-}
-
-.mb-3 {
-  margin-bottom: 15px;
-}
-
-/* 响应式调整 */
-@media screen and (max-width: 1200px) {
-  .batch-assign-container {
-    flex-direction: column;
+<style lang="scss" scoped>
+.dormitory-manage {
+  margin: 20px;
+  
+  .main-card {
+    margin-bottom: 20px;
   }
   
-  .students-section, 
-  .dorm-section {
-    width: 100%;
+  .page-header {
+    margin-bottom: 20px;
+    h2 {
+      margin: 0;
+      padding: 0;
+      color: #303133;
+    }
   }
-}
-
-@media screen and (max-width: 768px) {
+  
   .filter-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .dorm-info {
-    flex-direction: column;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
     align-items: flex-start;
+    
+    .filter-form {
+      flex: 1;
+    }
+    
+    .operation-buttons {
+      margin-left: 20px;
+    }
   }
   
-  .dorm-info el-button {
-    margin-left: 0;
-    margin-top: 10px;
+  .status-filter {
+    margin-bottom: 20px;
   }
   
-  .action-buttons {
-    flex-direction: column;
-    width: 100%;
+  .table-container {
+    .table-operations {
+      margin-bottom: 15px;
+    }
   }
   
-  .action-buttons .el-button {
-    margin: 3px 0 !important;
-    width: 100%;
+  .pagination-container {
+    margin-top: 20px;
+    text-align: right;
   }
   
-  .dialog-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+  .unassigned {
+    color: #F56C6C;
+  }
+  
+  .note {
+    margin-left: 10px;
+    color: #909399;
+    font-size: 12px;
+  }
+  
+  .no-data {
+    text-align: center;
+    color: #909399;
+    padding: 30px 0;
   }
 }
-</style>
+</style> 

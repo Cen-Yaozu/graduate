@@ -133,18 +133,6 @@ public class Student implements Serializable {
     private Integer paymentStatus;
 
     /**
-     * 宿舍楼
-     */
-    @TableField("dormitory")
-    private String dormitory;
-
-    /**
-     * 宿舍号
-     */
-    @TableField("dorm_number")
-    private String dormNumber;
-
-    /**
      * 班级ID
      */
     @TableField("classroom_id")
