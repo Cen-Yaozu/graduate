@@ -18,7 +18,7 @@
           </el-menu-item>
           <el-menu-item index="/sinformation">
             <el-icon><User /></el-icon>
-            <span>信息管理</span>
+            <span>个人信息</span>
           </el-menu-item>
           <el-menu-item index="/dorm">
             <el-icon><House /></el-icon>

@@ -42,14 +42,29 @@ public interface DormService extends IService<Dorm> {
     IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId);
 
     /**
+     * 获取所有学生（带关键词搜索）
+     */
+    IPage<Student> getAllStudents(int page, int size, String department, String majorname, Integer classroomId, String keyword);
+
+    /**
      * 获取未分配宿舍的学生
      */
-    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId);
+    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId, String selectDorm);
+
+    /**
+     * 获取未分配宿舍的学生（带关键词搜索）
+     */
+    IPage<Student> getUnassignedStudents(int page, int size, String department, String majorname, Integer classroomId, String selectDorm, String keyword);
 
     /**
      * 获取已分配宿舍的学生
      */
-    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId);
+    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId, String dormitory, String dormCard);
+
+    /**
+     * 获取已分配宿舍的学生（带关键词搜索）
+     */
+    IPage<Student> getAssignedStudents(int page, int size, String department, String majorname, Integer classroomId, String dormitory, String dormCard, String keyword);
 
     /**
      * 分配学生到宿舍
@@ -67,22 +82,17 @@ public interface DormService extends IService<Dorm> {
     List<Dorm> getAvailableDorms(String dormType, String dormsex, String dormitory);
 
     /**
-     * 批量分配学生到宿舍
-     */
-    boolean batchAssignStudentsToDorm(List<Map<String, Object>> assignments);
-
-    /**
-     * 获取所有系别
+     * 获取筛选选项的系别列表
      */
     List<String> getAllDepartments();
 
     /**
-     * 获取所有专业
+     * 获取筛选选项的专业列表
      */
     List<String> getAllMajors();
 
     /**
-     * 获取所有班级
+     * 获取筛选选项的班级列表
      */
     List<Classroom> getAllClassrooms();
 
@@ -90,4 +100,19 @@ public interface DormService extends IService<Dorm> {
      * 从宿舍移除学生
      */
     boolean removeStudentFromDorm(String studentNumber);
+
+    /**
+     * 更新学生的宿舍类型选择
+     */
+    boolean updateStudentSelectDorm(String studentNumber, String selectDorm);
+
+    /**
+     * 批量更新学生的宿舍类型选择
+     */
+    boolean batchUpdateStudentSelectDorm(List<String> studentNumbers, String selectDorm);
+
+    /**
+     * 批量分配学生到宿舍
+     */
+    boolean batchAssignStudentsToDorm(List<Map<String, Object>> assignments);
 } 

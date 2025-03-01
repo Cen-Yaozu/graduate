@@ -7,11 +7,6 @@
           <template #header>
             <div class="card-header">
               <span>个人基本信息</span>
-              <el-button type="primary" @click="handleEdit('basicForm')" v-if="!isEditing">编辑</el-button>
-              <div v-else>
-                <el-button type="success" @click="handleSave('basicForm')">保存</el-button>
-                <el-button @click="handleCancel('basicForm')">取消</el-button>
-              </div>
             </div>
           </template>
           
@@ -20,7 +15,7 @@
             :rules="basicRules" 
             ref="basicForm" 
             label-width="100px" 
-            :disabled="!isEditing"
+            disabled
           >
             <el-row :gutter="20">
               <el-col :span="12">
@@ -120,11 +115,6 @@
           <template #header>
             <div class="card-header">
               <span>教育经历</span>
-              <el-button type="primary" @click="handleEdit('resumeForm')" v-if="!isEditingResume">编辑</el-button>
-              <div v-else>
-                <el-button type="success" @click="handleSave('resumeForm')">保存</el-button>
-                <el-button @click="handleCancel('resumeForm')">取消</el-button>
-              </div>
             </div>
           </template>
           
@@ -132,7 +122,7 @@
             :model="resumeInfo" 
             ref="resumeForm" 
             label-width="100px" 
-            :disabled="!isEditingResume"
+            disabled
           >
             <div v-for="(edu, index) in resumeInfo.education" :key="index" class="education-item">
               <el-divider v-if="index > 0"></el-divider>
@@ -182,26 +172,7 @@
                   </el-form-item>
                 </el-col>
               </el-row>
-              
-              <el-row v-if="isEditingResume">
-                <el-col :span="24" class="text-right">
-                  <el-button 
-                    type="danger" 
-                    size="small" 
-                    @click="removeEducation(index)" 
-                    v-if="resumeInfo.education.length > 1"
-                  >
-                    删除
-                  </el-button>
-                </el-col>
-              </el-row>
             </div>
-            
-            <el-row v-if="isEditingResume">
-              <el-col :span="24" class="text-center">
-                <el-button type="primary" @click="addEducation">添加教育经历</el-button>
-              </el-col>
-            </el-row>
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -212,11 +183,6 @@
           <template #header>
             <div class="card-header">
               <span>家庭成员信息</span>
-              <el-button type="primary" @click="handleEdit('familyForm')" v-if="!isEditingFamily">编辑</el-button>
-              <div v-else>
-                <el-button type="success" @click="handleSave('familyForm')">保存</el-button>
-                <el-button @click="handleCancel('familyForm')">取消</el-button>
-              </div>
             </div>
           </template>
           
@@ -224,7 +190,7 @@
             :model="familyInfo" 
             ref="familyForm" 
             label-width="100px" 
-            :disabled="!isEditingFamily"
+            disabled
           >
             <div v-for="(member, index) in familyInfo.members" :key="index" class="family-item">
               <el-divider v-if="index > 0"></el-divider>
@@ -237,7 +203,7 @@
                 </el-col>
                 <el-col :span="8">
                   <el-form-item :label="'关系'" :prop="'members.' + index + '.relation'">
-                    <el-select v-model="member.relation" placeholder="请选择关系">
+                    <el-select v-model="member.relation" placeholder="请选择关系" style="width: 100%;">
                       <el-option label="父亲" value="父亲"></el-option>
                       <el-option label="母亲" value="母亲"></el-option>
                       <el-option label="兄弟" value="兄弟"></el-option>
@@ -247,44 +213,25 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="8">
-                  <el-form-item :label="'联系电话'" :prop="'members.' + index + '.phone'">
-                    <el-input v-model="member.phone"></el-input>
+                  <el-form-item :label="'年龄'" :prop="'members.' + index + '.age'">
+                    <el-input v-model="member.age"></el-input>
                   </el-form-item>
                 </el-col>
               </el-row>
               
               <el-row :gutter="20">
                 <el-col :span="12">
-                  <el-form-item :label="'工作单位'" :prop="'members.' + index + '.workplace'">
+                  <el-form-item :label="'单位'" :prop="'members.' + index + '.workplace'">
                     <el-input v-model="member.workplace"></el-input>
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item :label="'职业'" :prop="'members.' + index + '.occupation'">
+                  <el-form-item :label="'政治面貌'" :prop="'members.' + index + '.occupation'">
                     <el-input v-model="member.occupation"></el-input>
                   </el-form-item>
                 </el-col>
               </el-row>
-              
-              <el-row v-if="isEditingFamily">
-                <el-col :span="24" class="text-right">
-                  <el-button 
-                    type="danger" 
-                    size="small" 
-                    @click="removeFamilyMember(index)" 
-                    v-if="familyInfo.members.length > 1"
-                  >
-                    删除
-                  </el-button>
-                </el-col>
-              </el-row>
             </div>
-            
-            <el-row v-if="isEditingFamily">
-              <el-col :span="24" class="text-center">
-                <el-button type="primary" @click="addFamilyMember">添加家庭成员</el-button>
-              </el-col>
-            </el-row>
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -298,12 +245,6 @@ export default {
   data() {
     return {
       activeTab: 'basic',
-      isEditing: false,
-      isEditingResume: false,
-      isEditingFamily: false,
-      originalBasicInfo: null,
-      originalResumeInfo: null,
-      originalFamilyInfo: null,
       studentInfo: {
         studentNumber: '',
         name: '',
@@ -346,7 +287,7 @@ export default {
           {
             name: '',
             relation: '',
-            phone: '',
+            age: '',
             workplace: '',
             occupation: ''
           }
@@ -416,8 +357,6 @@ export default {
                 description: resumeData.hats || ''
               }]
             }
-            // 保存原始数据，用于取消编辑时恢复
-            this.originalResumeInfo = JSON.parse(JSON.stringify(this.resumeInfo))
           }
         })
         .catch(error => {
@@ -430,192 +369,47 @@ export default {
       
       this.$http.get(`/api/student/family/${studentName}`)
         .then(response => {
-          if (response.data.code === 200 && response.data.data) {
+          console.log('后端返回的家庭成员数据:', response.data)
+          if (response.data.code === 200 && response.data.data && response.data.data.length > 0) {
             // 映射后端数据到前端数据结构
             const familyData = response.data.data
+            console.log('家庭成员详细数据:', familyData)
             this.familyInfo = {
               members: familyData.map(member => ({
                 name: member.familyName || '',
                 relation: member.familyPart || '',
-                phone: '',
+                age: member.familyAge || '',
                 workplace: member.familyOrganization || '',
                 occupation: member.familyPoliteAspect || ''
               }))
             }
-            
-            // 如果没有家庭成员，添加一个空的
-            if (this.familyInfo.members.length === 0) {
-              this.familyInfo.members.push({
+          } else {
+            // 如果没有数据，设置一个默认的空家庭成员
+            this.familyInfo = {
+              members: [{
                 name: '',
                 relation: '',
-                phone: '',
+                age: '',
                 workplace: '',
                 occupation: ''
-              })
+              }]
             }
-            
-            // 保存原始数据，用于取消编辑时恢复
-            this.originalFamilyInfo = JSON.parse(JSON.stringify(this.familyInfo))
+            console.log('未找到家庭成员信息或数据为空')
           }
         })
         .catch(error => {
           console.error('获取家庭信息失败:', error)
-        })
-    },
-    handleEdit(formName) {
-      if (formName === 'basicForm') {
-        this.isEditing = true
-        this.originalBasicInfo = JSON.parse(JSON.stringify(this.studentInfo))
-      } else if (formName === 'resumeForm') {
-        this.isEditingResume = true
-        this.originalResumeInfo = JSON.parse(JSON.stringify(this.resumeInfo))
-      } else if (formName === 'familyForm') {
-        this.isEditingFamily = true
-        this.originalFamilyInfo = JSON.parse(JSON.stringify(this.familyInfo))
-      }
-    },
-    handleCancel(formName) {
-      if (formName === 'basicForm') {
-        this.studentInfo = JSON.parse(JSON.stringify(this.originalBasicInfo))
-        this.isEditing = false
-      } else if (formName === 'resumeForm') {
-        this.resumeInfo = JSON.parse(JSON.stringify(this.originalResumeInfo))
-        this.isEditingResume = false
-      } else if (formName === 'familyForm') {
-        this.familyInfo = JSON.parse(JSON.stringify(this.originalFamilyInfo))
-        this.isEditingFamily = false
-      }
-    },
-    handleSave(formName) {
-      this.$refs[formName].validate(valid => {
-        if (valid) {
-          if (formName === 'basicForm') {
-            this.saveBasicInfo()
-          } else if (formName === 'resumeForm') {
-            this.saveResumeInfo()
-          } else if (formName === 'familyForm') {
-            this.saveFamilyInfo()
-          }
-        } else {
-          return false
-        }
-      })
-    },
-    saveBasicInfo() {
-      // 构建提交到后端的数据，使用与后端匹配的字段名
-      const submitData = {
-        studentNumber: this.studentInfo.studentNumber,
-        studentName: this.studentInfo.name,
-        sex: this.studentInfo.gender,
-        birth: this.studentInfo.birthDate, // 使用birth字段
-        studentPhone: this.studentInfo.phone,
-        email: this.studentInfo.email,
-        politeAspect: this.studentInfo.politicalStatus,
-        address: this.studentInfo.address
-      }
-      
-      this.$http.put('/api/student/update', submitData)
-        .then(response => {
-          if (response.data.code === 200) {
-            this.$message.success('保存成功')
-            this.isEditing = false
-            this.getStudentInfo() // 刷新数据
-          } else {
-            this.$message.error(response.data.msg || '保存失败')
+          // 发生错误时也设置一个默认的空家庭成员
+          this.familyInfo = {
+            members: [{
+              name: '',
+              relation: '',
+              age: '',
+              workplace: '',
+              occupation: ''
+            }]
           }
         })
-        .catch(error => {
-          console.error('保存失败:', error)
-          this.$message.error('保存失败，请稍后重试')
-        })
-    },
-    saveResumeInfo() {
-      // 构建提交到后端的数据，使用正确的字段名
-      const resumeData = {
-        studentNumber: this.studentInfo.studentNumber,
-        startTime: this.resumeInfo.education[0].startDate,  // 使用 startTime 而不是 start_time
-        endTime: this.resumeInfo.education[0].endDate,      // 使用 endTime 而不是 end_time
-        organization: this.resumeInfo.education[0].schoolName,
-        hats: this.resumeInfo.education[0].description
-      }
-      
-      this.$http.put('/api/student/resume/update', resumeData)
-        .then(response => {
-          if (response.data.code === 200) {
-            this.$message.success('保存成功')
-            this.isEditingResume = false
-          } else {
-            this.$message.error(response.data.msg || '保存失败')
-          }
-        })
-        .catch(error => {
-          console.error('保存失败:', error)
-          this.$message.error('保存失败，请稍后重试')
-        })
-    },
-    saveFamilyInfo() {
-      // 保存所有家庭成员
-      const savePromises = this.familyInfo.members.map((member, index) => {
-        const familyData = {
-          studentNumber: this.studentInfo.studentNumber,
-          familyName: member.name,           // 使用 familyName 而不是 family_name
-          familyPart: member.relation,       // 使用 familyPart 而不是 family_part
-          familyAge: '',
-          familyPoliteAspect: member.occupation,  // 使用 familyPoliteAspect 而不是 family_polite_aspect
-          familyOrganization: member.workplace    // 使用 familyOrganization 而不是 family_organization
-        }
-        
-        // 如果是已有的家庭成员，则更新
-        if (this.originalFamilyInfo && 
-            this.originalFamilyInfo.members[index] && 
-            this.originalFamilyInfo.members[index].id) {
-          familyData.id = this.originalFamilyInfo.members[index].id
-          return this.$http.put('/api/student/family/update', familyData)
-        } else {
-          // 否则添加新的家庭成员
-          return this.$http.post('/api/student/family/add', familyData)
-        }
-      })
-      
-      Promise.all(savePromises)
-        .then(responses => {
-          const allSuccess = responses.every(response => response.data.code === 200)
-          if (allSuccess) {
-            this.$message.success('保存成功')
-            this.isEditingFamily = false
-            this.getFamilyInfo() // 刷新数据
-          } else {
-            this.$message.error('部分数据保存失败')
-          }
-        })
-        .catch(error => {
-          console.error('保存失败:', error)
-          this.$message.error('保存失败，请稍后重试')
-        })
-    },
-    addEducation() {
-      this.resumeInfo.education.push({
-        schoolName: '',
-        major: '',
-        startDate: '',
-        endDate: '',
-        description: ''
-      })
-    },
-    removeEducation(index) {
-      this.resumeInfo.education.splice(index, 1)
-    },
-    addFamilyMember() {
-      this.familyInfo.members.push({
-        name: '',
-        relation: '',
-        phone: '',
-        workplace: '',
-        occupation: ''
-      })
-    },
-    removeFamilyMember(index) {
-      this.familyInfo.members.splice(index, 1)
     }
   }
 }
@@ -646,6 +440,31 @@ export default {
 }
 
 .education-item, .family-item {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+/* 修复表单样式问题 */
+.el-form-item {
+  margin-bottom: 22px;
+}
+
+.el-input, .el-select {
+  width: 100%;
+}
+
+.el-row {
+  margin-bottom: 15px;
+}
+
+/* 确保所有字段正确显示 */
+:deep(.el-form-item__label) {
+  font-weight: bold;
+  line-height: 20px;
+  padding-bottom: 8px;
+}
+
+:deep(.el-input__inner) {
+  width: 100%;
+  height: 40px;
 }
 </style>

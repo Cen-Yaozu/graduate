@@ -84,9 +84,14 @@ public class AdminDormController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
-            @RequestParam(required = false) Integer classroomId) {
+            @RequestParam(required = false) Integer classroomId,
+            @RequestParam(required = false) String keyword) {
         try {
-            IPage<Student> pageResult = dormService.getAllStudents(page, size, department, majorname, classroomId);
+            System.out.println("查询所有学生参数: page=" + page + ", size=" + size +
+                    ", department=" + department + ", majorname=" + majorname +
+                    ", classroomId=" + classroomId + ", keyword=" + keyword);
+                    
+            IPage<Student> pageResult = dormService.getAllStudents(page, size, department, majorname, classroomId, keyword);
 
             // 使用Map存储已处理的学生，以学号为键，防止重复
             Map<String, Student> uniqueStudents = new HashMap<>();
@@ -117,6 +122,7 @@ public class AdminDormController {
 
     /**
      * 获取未分配宿舍的学生
+     * 未分配标准：dormitory或dorm_number为空
      */
     @GetMapping("/unassigned-students")
     public Result getUnassignedStudents(
@@ -124,14 +130,17 @@ public class AdminDormController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
-            @RequestParam(required = false) Integer classroomId) {
+            @RequestParam(required = false) Integer classroomId,
+            @RequestParam(required = false) String selectDorm,
+            @RequestParam(required = false) String keyword) {
         try {
             System.out.println("查询未分配学生参数: page=" + page + ", size=" + size +
                     ", department=" + department + ", majorname=" + majorname +
-                    ", classroomId=" + classroomId);
+                    ", classroomId=" + classroomId + ", selectDorm=" + selectDorm +
+                    ", keyword=" + keyword);
 
             IPage<Student> pageResult = dormService.getUnassignedStudents(page, size, department, majorname,
-                    classroomId);
+                    classroomId, selectDorm, keyword);
 
             // 确保返回的学生数据包含完整字段
             List<Student> enhancedStudents = new ArrayList<>();
@@ -143,7 +152,8 @@ public class AdminDormController {
                 System.out.println("学生数据: id=" + student.getId() +
                         ", 学号=" + student.getStudentNumber() +
                         ", 姓名=" + (student.getStudentName() != null ? student.getStudentName() : "null") +
-                        ", 性别=" + (student.getSex() != null ? student.getSex() : "null"));
+                        ", 性别=" + (student.getSex() != null ? student.getSex() : "null") +
+                        ", 宿舍类型选择=" + (student.getSelectDorm() != null ? student.getSelectDorm() : "null"));
 
                 // 基于学号去重
                 if (!uniqueStudents.containsKey(student.getStudentNumber())) {
@@ -170,6 +180,7 @@ public class AdminDormController {
 
     /**
      * 获取已分配宿舍的学生
+     * 已分配标准：dormitory和dorm_number都有值
      */
     @GetMapping("/assigned-students")
     public Result getAssignedStudents(
@@ -177,9 +188,18 @@ public class AdminDormController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String majorname,
-            @RequestParam(required = false) Integer classroomId) {
+            @RequestParam(required = false) Integer classroomId,
+            @RequestParam(required = false) String dormitory,
+            @RequestParam(required = false) String dormCard,
+            @RequestParam(required = false) String keyword) {
         try {
-            IPage<Student> pageResult = dormService.getAssignedStudents(page, size, department, majorname, classroomId);
+            System.out.println("查询已分配学生参数: page=" + page + ", size=" + size +
+                    ", department=" + department + ", majorname=" + majorname +
+                    ", classroomId=" + classroomId + ", dormitory=" + dormitory +
+                    ", dormCard=" + dormCard + ", keyword=" + keyword);
+                    
+            IPage<Student> pageResult = dormService.getAssignedStudents(page, size, department, majorname, 
+                    classroomId, dormitory, dormCard, keyword);
 
             // 使用Map存储已处理的学生，以学号为键，防止重复
             Map<String, Student> uniqueStudents = new HashMap<>();
@@ -209,6 +229,39 @@ public class AdminDormController {
     }
 
     /**
+     * 更新学生的宿舍类型选择
+     */
+    @PostMapping("/update-selectdorm")
+    public Result updateStudentSelectDorm(@RequestBody Map<String, Object> params) {
+        String studentNumber = (String) params.get("studentNumber");
+        String selectDorm = (String) params.get("selectDorm");
+
+        if (studentNumber == null || selectDorm == null) {
+            return Result.error("参数错误");
+        }
+
+        boolean success = dormService.updateStudentSelectDorm(studentNumber, selectDorm);
+        return success ? Result.success() : Result.error("更新学生宿舍类型选择失败");
+    }
+
+    /**
+     * 批量更新学生的宿舍类型选择
+     */
+    @PostMapping("/batch-update-selectdorm")
+    public Result batchUpdateStudentSelectDorm(@RequestBody Map<String, Object> params) {
+        @SuppressWarnings("unchecked")
+        List<String> studentNumbers = (List<String>) params.get("studentNumbers");
+        String selectDorm = (String) params.get("selectDorm");
+
+        if (studentNumbers == null || studentNumbers.isEmpty() || selectDorm == null) {
+            return Result.error("参数错误");
+        }
+
+        boolean success = dormService.batchUpdateStudentSelectDorm(studentNumbers, selectDorm);
+        return success ? Result.success() : Result.error("批量更新学生宿舍类型选择失败");
+    }
+
+    /**
      * 批量分配学生到宿舍
      */
     @PostMapping("/assign")
@@ -224,7 +277,7 @@ public class AdminDormController {
         }
 
         boolean success = dormService.assignStudentsToDorm(studentNumbers, dormType, dormitory, dormCard);
-        return success ? Result.success() : Result.error("分配失败，请检查宿舍容量");
+        return success ? Result.success() : Result.error("分配失败，请检查宿舍容量或性别匹配");
     }
 
     /**

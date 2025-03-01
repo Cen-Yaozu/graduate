@@ -15,8 +15,8 @@ public interface ClassService {
     List<Major> getAllMajors();
 
     /**
-     * 获取所有班级信息
+     * 获取所有班级信息，包含辅导员和学习导师的姓名
      * @return 班级信息列表
      */
-    List<Classroom> getAllClasses();
+    List<Map<String, Object>> getAllClasses();
 }

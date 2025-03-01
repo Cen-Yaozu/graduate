@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ClassServiceImpl implements ClassService {
@@ -28,7 +29,8 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public List<Classroom> getAllClasses() {
-        return classMapper.selectList(null);
+    public List<Map<String, Object>> getAllClasses() {
+        // 使用自定义查询方法获取班级信息，包含老师姓名
+        return classMapper.selectAllClassesWithTeacherName();
     }
 }
