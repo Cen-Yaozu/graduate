@@ -1,10 +1,14 @@
 package com.example.serve.controller.student;
 
+import com.example.serve.config.SecurityConfig;
 import com.example.serve.pojo.PayItem;
 import com.example.serve.service.PaymentService;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,9 +32,9 @@ public class StudentPaymentController {
      */
     @GetMapping("/student/payment/fasttrack")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseResult<List<PayItem>> getFastTrackPayments() {
+    public ResponseResult<List<PayItem>> getFastTrackPayments(String studentNumber) {
         try {
-            List<PayItem> payments = paymentService.getFastTrackPayments();
+            List<PayItem> payments = paymentService.getFastTrackPayments(studentNumber);
             return ResponseResult.okResult(payments);
         } catch (Exception e) {
             e.printStackTrace();

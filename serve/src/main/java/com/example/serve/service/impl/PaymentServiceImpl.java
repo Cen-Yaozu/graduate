@@ -24,10 +24,11 @@ public class PaymentServiceImpl implements PaymentService {
     private PayItemMapper paymentItemMapper;
 
     @Override
-    public List<PayItem> getFastTrackPayments() {
+    public List<PayItem> getFastTrackPayments(String studentNumber) {
         try {
             LambdaQueryWrapper<PayItem> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(PayItem::getHallway, "直通车");
+            queryWrapper.eq(PayItem::getHallway, "直通车")
+                    .eq(PayItem::getStudentNumber, studentNumber);
             return paymentItemMapper.selectList(queryWrapper);
         } catch (Exception e) {
             e.printStackTrace();

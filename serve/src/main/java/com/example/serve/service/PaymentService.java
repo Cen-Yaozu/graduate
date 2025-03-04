@@ -16,7 +16,7 @@ import java.util.List;
  */
 public interface PaymentService {
 
-    List<PayItem> getFastTrackPayments();
+    List<PayItem> getFastTrackPayments(String studentNumber);
 
     /**
      * 根据ID获取缴费项目
