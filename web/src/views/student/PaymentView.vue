@@ -3,15 +3,28 @@
     <el-card class="payment-card">
       <template #header>
         <div class="card-header">
-          <span>缴费管理</span>
+          <span>我的缴费信息</span>
         </div>
       </template>
 
       <div class="payment-content">
+          <!-- 学生信息摘要 -->
+          <div class="student-summary" v-if="studentInfo">
+            <el-descriptions :column="3" border size="small">
+              <el-descriptions-item label="学号">{{ studentInfo.studentNumber }}</el-descriptions-item>
+              <el-descriptions-item label="姓名">{{ studentInfo.studentName }}</el-descriptions-item>
+              <el-descriptions-item label="性别" v-if="studentInfo.sex">{{ studentInfo.sex }}</el-descriptions-item>
+              <el-descriptions-item label="学院" v-if="studentInfo.department">{{ studentInfo.department }}</el-descriptions-item>
+              <el-descriptions-item label="专业" v-if="studentInfo.majorname">{{ studentInfo.majorname }}</el-descriptions-item>
+            </el-descriptions>
+          </div>
+
+          <el-divider>缴费记录</el-divider>
+          
           <div class="filter-container">
             <el-input
               v-model="searchText"
-              placeholder="搜索学号或姓名"
+              placeholder="搜索缴费项目"
               style="width: 200px; margin-right: 10px"
               clearable
               @clear="handleSearch"
@@ -33,10 +46,8 @@
           </div>
           
           <el-table :data="filteredFastTrackPayments" style="width: 100%; margin-top: 20px" :resize-observer="false">
-            <el-table-column prop="studentNumber" label="学号" width="120" />
-            <el-table-column prop="studentName" label="姓名" width="120" />
-            <el-table-column prop="major" label="类型" width="180" />
             <el-table-column prop="paymentItem" label="缴费项目" />
+            <el-table-column prop="major" label="缴费类型" width="120" />
             <el-table-column prop="amount" label="金额" width="120">
               <template #default="scope">
                 ¥{{ scope.row.amount }}
@@ -51,6 +62,18 @@
               </template>
             </el-table-column>
             <el-table-column prop="paymentDate" label="缴费日期" width="120" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="scope">
+                <el-button 
+                  v-if="scope.row.status !== '已支付'" 
+                  type="primary" 
+                  size="small" 
+                  @click="openPaymentDialog(scope.row)"
+                >
+                  支付
+                </el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <div class="pagination-container">
             <el-pagination
@@ -63,7 +86,7 @@
             />
           </div>
           <div class="empty-block" v-if="filteredFastTrackPayments.length === 0">
-            <el-empty description="暂无满足条件的数据" />
+            <el-empty description="暂无缴费记录" />
           </div>
       </div>
     </el-card>
@@ -105,58 +128,7 @@ export default {
   },
   data() {
     return {
-      fastTrackPayments: [
-        {
-          studentNumber: '2024001',
-          studentName: '张三',
-          major: '计算机科学与技术',
-          paymentItem: '学费',
-          amount: 4800,
-          deadline: '2024-09-01',
-          status: '已支付',
-          paymentDate: '2024-08-15'
-        },
-        {
-          studentNumber: '2024002',
-          studentName: '李四',
-          major: '软件工程',
-          paymentItem: '学费',
-          amount: 4800,
-          deadline: '2024-09-01',
-          status: '已支付',
-          paymentDate: '2024-08-20'
-        },
-        {
-          studentNumber: '2024003',
-          studentName: '王五',
-          major: '信息安全',
-          paymentItem: '学费',
-          amount: 5200,
-          deadline: '2024-09-01',
-          status: '未支付',
-          paymentDate: ''
-        },
-        {
-          studentNumber: '2024004',
-          studentName: '赵六',
-          major: '人工智能',
-          paymentItem: '学费',
-          amount: 5500,
-          deadline: '2024-09-01',
-          status: '已支付',
-          paymentDate: '2024-08-18'
-        },
-        {
-          studentNumber: '2024005',
-          studentName: '钱七',
-          major: '计算机科学与技术',
-          paymentItem: '住宿费',
-          amount: 1200,
-          deadline: '2024-09-01',
-          status: '未支付',
-          paymentDate: ''
-        }
-      ],
+      fastTrackPayments: [],
       searchText: '',
       paymentStatus: '',
       currentPage: 1,
@@ -164,9 +136,13 @@ export default {
       paymentDialogVisible: false,
       currentPayment: {
         name: '',
-        amount: 0
+        amount: 0,
+        studentNumber: '',
+        amountcard: ''
       },
-      paymentMethod: ''
+      paymentMethod: '',
+      loading: false,
+      studentInfo: null
     }
   },
   computed: {
@@ -183,8 +159,7 @@ export default {
       if (this.searchText) {
         const searchLower = this.searchText.toLowerCase()
         filtered = filtered.filter(item => 
-          item.studentNumber.includes(searchLower) ||
-          item.studentName.toLowerCase().includes(searchLower)
+          (item.paymentItem && item.paymentItem.toLowerCase().includes(searchLower))
         )
       }
       
@@ -201,31 +176,83 @@ export default {
     }
   },
   created() {
+    this.fetchStudentInfo()
     this.fetchFastTrackPayments()
   },
   methods: {
+    async fetchStudentInfo() {
+      try {
+        // 从session获取学生学号
+        const studentNumber = window.sessionStorage.getItem('studentNumber')
+        if (!studentNumber) {
+          ElMessage.warning('未找到学生信息，请重新登录')
+          return
+        }
+        
+        // 调用API获取学生详细信息
+        const response = await this.$http.get(`/api/student/info/${studentNumber}`)
+        
+        if (response.data.code === 200) {
+          const data = response.data.data
+          this.studentInfo = {
+            studentNumber: data.studentNumber || studentNumber,
+            studentName: data.studentName || window.sessionStorage.getItem('studentName') || '未知',
+            department: data.department || '未知',
+            majorname: data.majorname || '未知',
+            sex: data.sex || '未知'
+          }
+        } else {
+          // 如果获取失败，使用sessionStorage中的信息
+          this.studentInfo = {
+            studentNumber: studentNumber,
+            studentName: window.sessionStorage.getItem('studentName') || '未知'
+          }
+        }
+      } catch (error) {
+        console.error('获取学生信息失败:', error)
+        // 失败时使用sessionStorage中的信息
+        this.studentInfo = {
+          studentNumber: window.sessionStorage.getItem('studentNumber'),
+          studentName: window.sessionStorage.getItem('studentName') || '未知'
+        }
+      }
+    },
     async fetchFastTrackPayments() {
       try {
-        const response = await this.$http.get('/api/student/payment/fasttrack')
+        this.loading = true
+        // 从会话存储中获取学生学号
+        const studentNumber = window.sessionStorage.getItem('studentNumber')
+        
+        if (!studentNumber) {
+          ElMessage.warning('未找到学生信息，请重新登录')
+          return
+        }
+
+        // 调用API获取当前学生的缴费信息
+        const response = await this.$http.get(`/api/student/payment/fasttrack?studentNumber=${studentNumber}`)
+        
         if (response.data.code === 200) {
           // 对后端返回的数据进行字段映射转换
           const mappedData = (response.data.data || []).map(item => ({
             studentNumber: item.studentNumber,
             studentName: item.studentName,
-            major: item.hallway || '直通车', // 使用hallway字段作为类型
-            paymentItem: '学费', // 设置默认缴费项目
-            amount: item.allmoney || parseInt(item.amountcard) || 0, // 尝试获取正确的金额值
-            deadline: '', // 设置默认截止日期
-            status: item.indentStatus || '未支付', // 直接使用indentStatus作为状态
-            paymentDate: '' // 设置默认缴费日期
+            major: item.hallway || '学费', // 使用hallway字段作为类型
+            paymentItem: item.remark || '学费', // 使用remark作为缴费项目
+            amount: item.allmoney || 0, // 金额
+            deadline: '2024-09-01', // 设置默认截止日期
+            status: item.indentStatue || '未支付', // 直接使用indentStatue作为状态
+            paymentDate: item.indentStatue === '已支付' ? new Date().toLocaleDateString() : '', // 设置支付日期
+            amountcard: item.amountcard || '' // 保存缴费编号
           }));
           this.fastTrackPayments = mappedData;
         } else {
-          throw new Error(response.data.message || '获取直通车缴费数据失败')
+          throw new Error(response.data.message || '获取缴费数据失败')
         }
       } catch (error) {
-        console.error('获取直通车缴费数据失败:', error)
-        ElMessage.error('获取直通车缴费数据失败')
+        console.error('获取缴费数据失败:', error)
+        ElMessage.error('获取缴费数据失败')
+      } finally {
+        this.loading = false
       }
     },
     handleSearch() {
@@ -239,6 +266,15 @@ export default {
     handlePageChange(page) {
       this.currentPage = page
     },
+    openPaymentDialog(payment) {
+      this.currentPayment = {
+        name: payment.paymentItem,
+        amount: payment.amount,
+        studentNumber: payment.studentNumber,
+        amountcard: payment.amountcard
+      }
+      this.paymentDialogVisible = true
+    },
     async confirmPayment() {
       try {
         if (!this.paymentMethod) {
@@ -248,21 +284,23 @@ export default {
 
         const paymentInfo = {
           studentNumber: this.currentPayment.studentNumber,
-          paymentId: this.currentPayment.id,
+          amountcard: this.currentPayment.amountcard,
           method: this.paymentMethod
         }
 
         const response = await this.$http.post('/api/student/payment/pay', paymentInfo)
+        
         if (response.data.code === 200) {
           ElMessage.success('支付成功')
           this.paymentDialogVisible = false
-          this.fetchFastTrackPayments() // 刷新支付数据
+          // 刷新缴费数据
+          this.fetchFastTrackPayments()
         } else {
-          throw new Error(response.data.message || '支付失败')
+          throw new Error(response.data.message || '支付处理失败')
         }
       } catch (error) {
         console.error('支付处理失败:', error)
-        ElMessage.error(error.message || '支付处理失败')
+        ElMessage.error('支付处理失败')
       }
     }
   }
@@ -273,31 +311,33 @@ export default {
 .payment-container {
   padding: 20px;
 }
+
 .payment-card {
-  max-width: 1200px;
-  margin: 0 auto;
+  margin-bottom: 20px;
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+
 .filter-container {
   display: flex;
   margin-bottom: 20px;
-  align-items: center;
 }
+
 .pagination-container {
   margin-top: 20px;
   display: flex;
   justify-content: center;
 }
+
 .empty-block {
-  margin-top: 40px;
+  margin-top: 20px;
+}
+
+.student-summary {
+  margin-top: 30px;
 }
 </style>

@@ -7,7 +7,7 @@
         </div>
       </template>
 
-      <el-form :model="arrivalInfo" label-width="120px" :disabled="arrivalInfo.status === '已登记'">
+      <el-form :model="arrivalInfo" label-width="120px" :disabled="arrivalInfo.status === '已登记' && !isEditing">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="学号">
@@ -47,6 +47,7 @@
               <el-select v-model="arrivalInfo.tool" placeholder="请选择交通工具">
                 <el-option label="火车" value="火车" />
                 <el-option label="飞机" value="飞机" />
+                <el-option label="高铁" value="高铁" />
                 <el-option label="汽车" value="汽车" />
                 <el-option label="其他" value="其他" />
               </el-select>
@@ -60,8 +61,19 @@
         </el-row>
 
         <el-form-item>
-          <el-button type="primary" @click="submitArrival" v-if="arrivalInfo.status !== '已登记'">提交登记</el-button>
-          <el-tag type="success" v-else>已完成登记</el-tag>
+          <div v-if="arrivalInfo.status !== '已登记'">
+            <el-button type="primary" @click="submitArrival">提交登记</el-button>
+          </div>
+          <div v-else>
+            <div v-if="!isEditing">
+              <el-tag type="success">已完成登记</el-tag>
+              <el-button type="primary" @click="startEditing" style="margin-left: 15px">编辑</el-button>
+            </div>
+            <div v-else>
+              <el-button type="primary" @click="updateArrival">保存修改</el-button>
+              <el-button @click="cancelEditing" style="margin-left: 10px">取消</el-button>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
     </el-card>
@@ -81,7 +93,9 @@ export default {
         tool: '',
         familyNum: 0,
         status: '未登记'
-      }
+      },
+      isEditing: false,
+      originalInfo: null
     }
   },
   created() {
@@ -144,6 +158,40 @@ export default {
       } catch (error) {
         console.error('登记失败:', error)
         this.$message.error('登记失败')
+      }
+    },
+    startEditing() {
+      // 保存原始信息用于取消编辑时恢复
+      this.originalInfo = JSON.parse(JSON.stringify(this.arrivalInfo))
+      this.isEditing = true
+    },
+    cancelEditing() {
+      // 恢复原始信息
+      if (this.originalInfo) {
+        this.arrivalInfo = JSON.parse(JSON.stringify(this.originalInfo))
+      }
+      this.isEditing = false
+    },
+    async updateArrival() {
+      try {
+        if (!this.arrivalInfo.date || !this.arrivalInfo.time || !this.arrivalInfo.tool) {
+          this.$message.error('请填写完整信息')
+          return
+        }
+
+        const response = await this.$http.put('/api/arrive/update', this.arrivalInfo)
+        
+        if (response.data.code === 200) {
+          this.$message.success('更新成功')
+          this.isEditing = false
+          // 更新完成后重新获取最新信息
+          this.fetchArrivalInfo()
+        } else {
+          this.$message.error(response.data.msg || '更新失败')
+        }
+      } catch (error) {
+        console.error('更新失败:', error)
+        this.$message.error('更新失败')
       }
     }
   }

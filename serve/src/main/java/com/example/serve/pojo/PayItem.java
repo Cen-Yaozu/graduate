@@ -22,7 +22,7 @@ public class PayItem implements Serializable {
      * 学号
      */
     @TableField("studentNumber")
-    private Integer studentNumber;
+    private String studentNumber;
 
     /**
      * 姓名

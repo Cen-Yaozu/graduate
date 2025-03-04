@@ -209,7 +209,13 @@ export default {
           if (data.data.auth === 'ROLE_ADMIN') {
             this.$router.push('/admin/dashboard');
           } else {
-            sessionStorage.setItem('studentName', data.data.studentNumber);
+            // 保存学生姓名（如果存在）
+            if (data.data.name) {
+              sessionStorage.setItem('studentName', data.data.name);
+            } else {
+              // 如果没有名字字段，暂用学号代替
+              sessionStorage.setItem('studentName', data.data.studentNumber);
+            }
             this.$router.push('/freshmanreport');
           }
         } else {
