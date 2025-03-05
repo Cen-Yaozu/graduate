@@ -17,7 +17,7 @@ import java.util.Map;
  * @since 2025-02-23
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/student")
 public class StudentPaymentController {
 
     @Autowired
@@ -26,7 +26,7 @@ public class StudentPaymentController {
     /**
      * 获取直通车缴费数据
      */
-    @GetMapping("/student/payment/fasttrack")
+    @GetMapping("/payment/fasttrack")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult<List<PayItem>> getFastTrackPayments(@RequestParam String studentNumber) {
         try {
@@ -44,7 +44,7 @@ public class StudentPaymentController {
     /**
      * 处理学生缴费请求
      */
-    @PostMapping("/student/payment/pay")
+    @PostMapping("/payment/pay")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult<Void> payForItem(@RequestBody Map<String, Object> paymentInfo) {
         try {
@@ -52,7 +52,7 @@ public class StudentPaymentController {
             String amountcard = (String) paymentInfo.get("amountcard");
             String method = (String) paymentInfo.get("method");
 
-            boolean success = paymentService.payForItem(Integer.parseInt(studentNumber), amountcard, method);
+            boolean success = paymentService.payForItem(studentNumber, amountcard, method);
 
             return success ? ResponseResult.okResult() : ResponseResult.errorResult(400, "支付处理失败");
         } catch (Exception e) {

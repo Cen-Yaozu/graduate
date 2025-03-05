@@ -17,7 +17,7 @@ import java.util.List;
  * @since 2025-02-23
  */
 @RestController
-@RequestMapping("/api/arrive")
+@RequestMapping("/api/student/arrive")
 public class StudentArriveController {
 
     @Autowired

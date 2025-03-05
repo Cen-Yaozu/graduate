@@ -74,7 +74,7 @@ public class StudentInfoServiceImpl implements StudentInfoService {
     public ResponseResult<List<Family>> getFamilyInfo(String studentNumber) {
         try {
             Page<Family> page = new Page<>(1, 10);
-            Page<Family> familyPage = familyMapper.selectList(page, studentNumber);
+            Page<Family> familyPage = familyMapper.selectListByPageAndStudenNumber(page, studentNumber);
             
             return new ResponseResult<>(200, "操作成功", familyPage.getRecords());
         } catch (Exception e) {

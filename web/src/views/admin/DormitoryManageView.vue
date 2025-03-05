@@ -1281,185 +1281,179 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .dormitory-manage {
   margin: 20px;
-  
-  .main-card {
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
-    border-radius: 4px;
-  }
-  
-  .page-header {
-    margin-bottom: 20px;
-    text-align: center;
-    border-bottom: 1px solid #ebeef5;
-    padding-bottom: 15px;
-    
-    h2 {
-      margin: 0;
-      padding: 0;
-      color: #303133;
-      font-weight: 600;
-    }
-  }
-  
-  .filter-container {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    
-    .filter-form {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      
-      .el-form-item {
-        margin-bottom: 15px;
-        margin-right: 15px;
-        
-        .el-select {
-          .el-input__inner {
-            border-radius: 4px;
-          }
-        }
-        
-        .el-form-item__label {
-          font-weight: 500;
-        }
-      }
-    }
-    
-    .operation-buttons {
-      margin-left: 20px;
-      display: flex;
-      gap: 10px;
-    }
-  }
-  
-  .status-filter {
-    margin-bottom: 20px;
-    
-    .el-radio-button__inner {
-      padding: 10px 20px;
-    }
-  }
-  
-  .table-container {
-    .table-operations {
-      margin-bottom: 15px;
-    }
-    
-    .el-table {
-      margin-bottom: 20px;
-      
-      th {
-        background-color: #f5f7fa;
-        color: #606266;
-        font-weight: bold;
-        padding: 8px 0;
-        text-align: center;
-      }
-      
-      td {
-        padding: 8px;
-        text-align: center;
-      }
-      
-      .el-button {
-        padding: 5px 10px;
-        margin: 0 2px;
-      }
-    }
-  }
-  
-  .pagination-container {
-    margin-top: 20px;
-    text-align: right;
-  }
-  
-  .unassigned {
-    color: #F56C6C;
-    font-weight: bold;
-  }
-  
-  .note {
-    margin-left: 10px;
-    color: #909399;
-    font-size: 12px;
-  }
-  
-  .no-data {
-    text-align: center;
-    color: #909399;
-    padding: 30px 0;
-    font-size: 14px;
-  }
-  
-  .action-buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  
-  // 优化表格内标签的显示
-  .el-tag {
-    font-weight: normal;
-    
-    &.el-tag--success {
-      background-color: #f0f9eb;
-    }
-    
-    &.el-tag--warning {
-      background-color: #fdf6ec;
-    }
-    
-    &.el-tag--info {
-      background-color: #f4f4f5;
-    }
-  }
-  
-  // 针对操作按钮的优化
-  :deep(.el-button--primary) {
-    background-color: #409EFF;
-  }
-  
-  :deep(.el-button--success) {
-    background-color: #67C23A;
-  }
-  
-  :deep(.el-button--warning) {
-    background-color: #E6A23C;
-  }
-  
-  :deep(.el-button--danger) {
-    background-color: #F56C6C;
-  }
-  
-  :deep(.row-success) {
-    background-color: #f0f9eb;
-  }
-  
-  :deep(.row-danger) {
-    background-color: #fef0f0;
-  }
-  
-  .el-select-dropdown__item {
-    padding: 0 15px;
-  }
-  
-  :deep(.el-select-dropdown) {
-    min-width: 120px !important;
-  }
-  
-  :deep(.el-input__inner) {
-    height: 36px;
-    line-height: 36px;
-  }
+}
+
+.dormitory-manage .main-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
+  border-radius: 4px;
+}
+
+.dormitory-manage .page-header {
+  margin-bottom: 20px;
+  text-align: center;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 15px;
+}
+
+.dormitory-manage .page-header h2 {
+  margin: 0;
+  padding: 0;
+  color: #303133;
+  font-weight: 600;
+}
+
+.dormitory-manage .filter-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.dormitory-manage .filter-form {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dormitory-manage .filter-form .el-form-item {
+  margin-bottom: 15px;
+  margin-right: 15px;
+}
+
+.dormitory-manage .filter-form .el-form-item .el-select .el-input__inner {
+  border-radius: 4px;
+}
+
+.dormitory-manage .filter-form .el-form-item__label {
+  font-weight: 500;
+}
+
+.dormitory-manage .operation-buttons {
+  margin-left: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.dormitory-manage .status-filter {
+  margin-bottom: 20px;
+}
+
+.dormitory-manage .status-filter .el-radio-button__inner {
+  padding: 10px 20px;
+}
+
+.dormitory-manage .table-container .table-operations {
+  margin-bottom: 15px;
+}
+
+.dormitory-manage .table-container .el-table {
+  margin-bottom: 20px;
+}
+
+.dormitory-manage .table-container .el-table th {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: bold;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.dormitory-manage .table-container .el-table td {
+  padding: 8px;
+  text-align: center;
+}
+
+.dormitory-manage .table-container .el-table .el-button {
+  padding: 5px 10px;
+  margin: 0 2px;
+}
+
+.dormitory-manage .pagination-container {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.dormitory-manage .unassigned {
+  color: #F56C6C;
+  font-weight: bold;
+}
+
+.dormitory-manage .note {
+  margin-left: 10px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.dormitory-manage .no-data {
+  text-align: center;
+  color: #909399;
+  padding: 30px 0;
+  font-size: 14px;
+}
+
+.dormitory-manage .action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dormitory-manage .el-tag {
+  font-weight: normal;
+}
+
+.dormitory-manage .el-tag.el-tag--success {
+  background-color: #f0f9eb;
+}
+
+.dormitory-manage .el-tag.el-tag--warning {
+  background-color: #fdf6ec;
+}
+
+.dormitory-manage .el-tag.el-tag--info {
+  background-color: #f4f4f5;
+}
+
+.dormitory-manage :deep(.el-button--primary) {
+  background-color: #409EFF;
+}
+
+.dormitory-manage :deep(.el-button--success) {
+  background-color: #67C23A;
+}
+
+.dormitory-manage :deep(.el-button--warning) {
+  background-color: #E6A23C;
+}
+
+.dormitory-manage :deep(.el-button--danger) {
+  background-color: #F56C6C;
+}
+
+.dormitory-manage :deep(.row-success) {
+  background-color: #f0f9eb;
+}
+
+.dormitory-manage :deep(.row-danger) {
+  background-color: #fef0f0;
+}
+
+.dormitory-manage .el-select-dropdown__item {
+  padding: 0 15px;
+}
+
+.dormitory-manage :deep(.el-select-dropdown) {
+  min-width: 120px !important;
+}
+
+.dormitory-manage :deep(.el-input__inner) {
+  height: 36px;
+  line-height: 36px;
 }
 </style> 

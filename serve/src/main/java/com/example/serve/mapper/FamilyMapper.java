@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.serve.pojo.Family;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -20,5 +21,6 @@ import java.util.List;
  */
 @Mapper
 public interface FamilyMapper extends BaseMapper<Family> {
-    Page<Family> selectList(Page<Family> page, @Param("studentNumber") String studentNumber);
+    Page<Family> selectListByPageAndStudenNumber(Page<Family> page, @Param("studentNumber") String studentNumber);
+
 }

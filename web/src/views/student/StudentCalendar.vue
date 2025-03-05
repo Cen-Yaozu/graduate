@@ -56,7 +56,7 @@
 import { ref, computed } from 'vue'
 
 export default {
-  name: 'TimelineView',
+  name: 'StudentCalendar',
   setup() {
     const eventDetailVisible = ref(false)
     const currentEvent = ref({})

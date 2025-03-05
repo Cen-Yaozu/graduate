@@ -3,7 +3,7 @@
 <mapper namespace="com.example.serve.mapper.FamilyMapper">
     
     <!-- 根据学号查询家庭成员信息 -->
-    <select id="selectList" resultType="com.example.serve.pojo.Family">
+    <select id="selectListByPageAndStudenNumber" resultType="com.example.serve.pojo.Family">
         SELECT * FROM family 
         WHERE studentNumber = #{studentNumber}
     </select>

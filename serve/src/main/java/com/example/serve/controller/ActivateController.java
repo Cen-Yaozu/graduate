@@ -5,6 +5,7 @@ import com.example.serve.mapper.StudentMapper;
 import com.example.serve.mapper.UserMapper;
 import com.example.serve.pojo.Student;
 import com.example.serve.pojo.User;
+import com.example.serve.service.EmailService;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -28,6 +29,9 @@ public class ActivateController {
 
     @Autowired
     private UserMapper userMapper;
+    
+    @Autowired
+    private EmailService emailService;
 
     /**
      * 验证学生信息
@@ -102,18 +106,42 @@ public class ActivateController {
             return ResponseResult.errorResult(400, "邮箱格式不正确");
         }
 
-        // 在真实环境中，这里会有发送验证码到邮箱的逻辑
-        // 此处仅作示例，不实际发送验证码
+        try {
+            // 发送验证码邮件
+            String verificationCode = emailService.sendVerificationEmail(email, studentNumber);
+            
+            // 记录日志
+            System.out.println("向 " + email + " 发送验证码: " + verificationCode);
+            
+            return ResponseResult.okResult(200, "验证码已发送，请查收邮箱");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "验证码发送失败: " + e.getMessage());
+        }
+    }
 
-        // 模拟生成验证码并存储
-        String verificationCode = UUID.randomUUID().toString().substring(0, 6);
-
-        // 这里应该将验证码和学号关联存储，以便后续验证
-        // 可以使用Redis等缓存服务存储验证码，并设置过期时间
-
-        System.out.println("模拟向 " + email + " 发送验证码: " + verificationCode);
-
-        return ResponseResult.okResult(200, "验证码已发送，请查收邮箱");
+    /**
+     * 验证验证码
+     * 检查用户输入的验证码是否正确
+     */
+    @PostMapping("/verify-code")
+    public ResponseResult<Void> verifyCode(@RequestBody Map<String, Object> requestBody) {
+        String studentNumber = (String) requestBody.get("studentNumber");
+        String verificationCode = (String) requestBody.get("verificationCode");
+        
+        // 验证参数是否为空
+        if (!StringUtils.hasText(studentNumber) || !StringUtils.hasText(verificationCode)) {
+            return ResponseResult.errorResult(400, "学号和验证码不能为空");
+        }
+        
+        // 调用EmailService的verifyCode方法验证验证码
+        boolean isValid = emailService.verifyCode(studentNumber, verificationCode);
+        
+        if (isValid) {
+            return ResponseResult.okResult(200, "验证成功");
+        } else {
+            return ResponseResult.errorResult(400, "验证码输入错误");
+        }
     }
 
     /**
@@ -146,8 +174,14 @@ public class ActivateController {
             return ResponseResult.errorResult(400, "密码长度不能少于6位");
         }
 
-        // 在真实环境中，这里会验证验证码是否正确
-        // 此处仅作示例，跳过验证码验证
+        // 验证码验证
+        if (StringUtils.hasText(verificationCode)) {
+            boolean codeValid = emailService.verifyCode(studentNumber, verificationCode);
+            
+            if (!codeValid) {
+                return ResponseResult.errorResult(400, "验证码错误或已过期");
+            }
+        }
 
         // 创建新用户
         User newUser = new User();
@@ -167,7 +201,7 @@ public class ActivateController {
                 Student student = studentMapper.selectOne(studentQuery);
 
                 if (student != null && StringUtils.hasText(email)) {
-                    student.setStudentPhone(email); // 暂时用phone字段存储邮箱
+                    student.setEmail(email); // 使用email字段存储邮箱
                     studentMapper.updateById(student);
                 }
 

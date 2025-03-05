@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 
 @Controller
-@RequestMapping("/student")
+@RequestMapping("/api/student")
 public class StudentController {
     @Autowired
     private FamilyMapper familyMapper;

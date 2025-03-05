@@ -50,7 +50,10 @@ public class SecurityConfig {
                         // 添加激活相关的API路径，使它们不需要认证
                         "/api/verify-student",
                         "/api/send-verification",
-                        "/api/activate-account")
+                        "/api/activate-account",
+                        "/arrive/**",
+                        "/api/student/arrive/**",
+                        "/api/freshman-report/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated();

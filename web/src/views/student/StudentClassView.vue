@@ -34,7 +34,7 @@
 
 <script>
 export default {
-  name: 'ClassView',
+  name: 'StudentClassView',
   data() {
     return {
       classData: [],

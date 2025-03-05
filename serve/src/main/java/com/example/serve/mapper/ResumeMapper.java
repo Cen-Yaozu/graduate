@@ -2,7 +2,9 @@ package com.example.serve.mapper;
 
 import com.example.serve.pojo.Resume;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * <p>
@@ -14,5 +16,5 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface ResumeMapper extends BaseMapper<Resume> {
-
+    
 }

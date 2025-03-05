@@ -80,7 +80,7 @@ import router from '@/router';
 import { Calendar, User, House, Money, School, Location, Expand, Fold, ArrowDown } from '@element-plus/icons-vue';
 
 export default {
-name: "SHomeView",
+name: 'StudentSHomeView',
   data(){
   return{
     isCollapse:false,

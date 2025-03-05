@@ -32,6 +32,7 @@
         </div>
       </el-menu>
      </el-header>
+     
      <div class="box">
       <div class="left">
         <p>校内资源</p >
@@ -87,7 +88,7 @@ export default {
       activeIndex:"1",
       UserFilled,
       ArrowDown,
-      studentNumber: window.sessionStorage.getItem('studentNumber') || '未知用户'
+      studentNumber: window.sessionStorage.getItem('studentNumber') || '未知用户',
     }
   },
   methods:{
@@ -152,6 +153,77 @@ export default {
    z-index: -10;
    overflow: hidden;
  }
+ 
+ /* 照片上传相关样式 */
+.photo-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.photo-requirements {
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 4px;
+}
+
+.photo-requirements h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #409EFF;
+}
+
+.photo-requirements ol {
+  padding-left: 20px;
+  margin-bottom: 0;
+}
+
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.avatar-uploader {
+  width: 200px;
+  height: 200px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.avatar-uploader:hover {
+  border-color: #409EFF;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 200px;
+  height: 200px;
+  line-height: 200px;
+  text-align: center;
+}
+
+.avatar {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.upload-tip {
+  margin-top: 10px;
+  color: #606266;
+  font-size: 14px;
+}
+ 
  /*导航栏*/
  .el-menu--horizontal > .el-menu-item:nth-child(1) {
     margin-right: auto;

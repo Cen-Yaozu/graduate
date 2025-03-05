@@ -241,7 +241,7 @@
 
 <script>
 export default {
-  name: 'SInformation',
+  name: 'StudentSInformation',
   data() {
     return {
       activeTab: 'basic',

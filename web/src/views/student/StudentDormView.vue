@@ -67,7 +67,7 @@
 import { ElMessage } from 'element-plus'
 
 export default {
-  name: 'DormView',
+  name: 'StudentDormView',
   data() {
     return {
       dormInfo: {

@@ -146,7 +146,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public boolean payForItem(Integer studentNumber, String amountcard, String method) {
+    public boolean payForItem(String studentNumber, String amountcard, String method) {
         try {
             // 根据缴费编号查找缴费项目
             LambdaQueryWrapper<PayItem> queryWrapper = new LambdaQueryWrapper<>();

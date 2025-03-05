@@ -41,7 +41,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 // 以下是新增的激活API路径
                 uri.contains("/api/verify-student") ||
                 uri.contains("/api/send-verification") ||
-                uri.contains("/api/activate-account")
+                uri.contains("/api/activate-account") ||
+                uri.contains("/arrive")
         ) {
             filterChain.doFilter(request, response);
             return;

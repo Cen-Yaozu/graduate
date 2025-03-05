@@ -67,7 +67,7 @@
 import { ElMessage } from 'element-plus'
 
 export default {
-  name: 'InfoView',
+  name: 'StudentInfoView',
   data() {
     return {
       isEditing: false,

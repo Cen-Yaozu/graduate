@@ -67,7 +67,7 @@ public interface PaymentService {
      * @param method        支付方式
      * @return 支付是否成功
      */
-    boolean payForItem(Integer studentNumber, String amountcard, String method);
+    boolean payForItem(String studentNumber, String amountcard, String method);
 
     /**
      * 根据学号查询缴费记录

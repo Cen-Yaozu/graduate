@@ -82,7 +82,7 @@
 
 <script>
 export default {
-  name: 'ArrivalView',
+  name: 'StudentArrivalView',
   data() {
     return {
       arrivalInfo: {
@@ -110,7 +110,7 @@ export default {
           return
         }
         
-        const response = await this.$http.get(`/api/arrive/info/${studentNumber}`)
+        const response = await this.$http.get(`/api/student/arrive/info/${studentNumber}`)
         if (response.data.code === 200) {
           const data = response.data.data
           if (data) {
@@ -147,7 +147,7 @@ export default {
           return
         }
 
-        const response = await this.$http.put('/api/arrive/update', this.arrivalInfo)
+        const response = await this.$http.put('/api/student/arrive/update', this.arrivalInfo)
         
         if (response.data.code === 200) {
           this.$message.success('登记成功')
@@ -179,7 +179,7 @@ export default {
           return
         }
 
-        const response = await this.$http.put('/api/arrive/update', this.arrivalInfo)
+        const response = await this.$http.put('/api/student/arrive/update', this.arrivalInfo)
         
         if (response.data.code === 200) {
           this.$message.success('更新成功')

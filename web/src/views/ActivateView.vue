@@ -40,7 +40,7 @@
             
             <el-form-item label="证件" prop="idType">
               <el-select v-model="check.idType" placeholder="选择证件类型" style="width: 100%">
-                <el-option label="居民身份证" value="居民身份证" />
+                <el-option label="身份证" value="身份证" />
                 <el-option label="其他" value="其他" />
               </el-select>
             </el-form-item>
@@ -171,7 +171,7 @@ export default {
       check: {
         admissionTicket: '',
         studentName: '',
-        idType: '居民身份证',
+        idType: '身份证',
         idCard: '',
         email: '',
         textcode: '',
@@ -244,12 +244,35 @@ export default {
           }
         }
       } else if (this.currentStep === 1) {
-        if (this.check.email && /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(this.check.email)) {
-          // 邮箱格式正确，直接进入下一步
-          this.currentStep++;
-        } else {
+        // 首先检查邮箱格式
+        if (!this.check.email || !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(this.check.email)) {
           ElMessage.error('请填写正确的邮箱地址');
+          return;
         }
+        
+        // 如果用户没有输入验证码，提示填写
+        if (!this.check.textcode) {
+          ElMessage.error('请填写验证码');
+          return;
+        }
+        
+        // 调用后端API验证验证码
+        this.$http.post('/api/verify-code', {
+          studentNumber: this.check.studentNumber,
+          verificationCode: this.check.textcode
+        }).then(response => {
+          if (response.data.code === 200) {
+            // 验证码正确，进入下一步
+            ElMessage.success('验证通过');
+            this.currentStep++;
+          } else {
+            // 验证码错误，提示用户
+            ElMessage.error('验证码输入错误');
+          }
+        }).catch(error => {
+          console.error('验证失败:', error);
+          ElMessage.error('验证失败: ' + (error.response?.data?.msg || '服务器错误'));
+        });
       } else if (this.currentStep === 2) {
         if (this.check.pass && this.check.pass.length >= 6 && this.check.pass === this.check.checkPass) {
           // 密码设置正确，调用API

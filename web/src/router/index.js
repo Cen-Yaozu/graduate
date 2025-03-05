@@ -13,10 +13,10 @@ import FreshmenView from "@/views/FreshmenView";
 import PhotoView from "@/views/PhotoView";
 import InformationView from "@/views/InformationView";
 import ArriveView from "@/views/ArriveView";
-import SHomeView from "@/views/student/SHomeView.vue";
+import SHomeView from "@/views/student/StudentSHomeView.vue";
 import AHomeView from "@/views/admin/AHomeView";
-import SInformation from "@/views/student/SInformation.vue";
-import Calendar from "@/views/student/Calendar.vue";
+import SInformation from "@/views/student/StudentSInformation.vue";
+import Calendar from "@/views/student/StudentCalendar.vue";
 import AdminLayout from "@/views/admin/AdminLayout.vue";
 
 const router=createRouter({
@@ -114,25 +114,25 @@ const router=createRouter({
                 {
                     path:"/dorm",
                     name:"dorm",
-                    component:()=>import('@/views/student/DormView.vue'),
+                    component:()=>import('@/views/student/StudentDormView.vue'),
                     meta:{title:"宿舍管理"}
                 },
                 {
                     path:"/payment",
                     name:"payment",
-                    component:()=>import('@/views/student/PaymentView.vue'),
+                    component:()=>import('@/views/student/StudentPaymentView.vue'),
                     meta:{title:"缴费管理"}
                 },
                 {
                     path:"/arrival",
                     name:"arrival",
-                    component:()=>import('@/views/student/ArrivalView.vue'),
+                    component:()=>import('@/views/student/StudentArrivalView.vue'),
                     meta:{title:"抵校管理"}
                 },
                 {
                     path:"/class",
                     name:"class",
-                    component:()=>import('@/views/student/ClassView.vue'),
+                    component:()=>import('@/views/student/StudentClassView.vue'),
                     meta:{title:"班级管理"}
                 }
             ]

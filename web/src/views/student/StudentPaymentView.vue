@@ -122,7 +122,7 @@ import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 
 export default {
-  name: 'PaymentView',
+  name: 'StudentPaymentView',
   components: {
     Search
   },

@@ -1,3 +1,57 @@
+spring:
+  application:
+    name: serve
+  
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/bs?serverTimezone=UTC&useSSL=false
+    username: root
+    password: woalzm13.
+  
+  # Redis配置（已注释掉，因为不使用）
+  # data:
+  #   redis:
+  #     database: 0
+  #     host: 127.0.0.1
+  #     port: 6379
+  
+  # Jackson配置
+  jackson:
+    date-format: java.text.SimpleDateFormat
+    time-zone: GMT+8
+  
+  # 邮件配置
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 您的邮箱账号@qq.com
+    password: 您的邮箱授权码
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
+    
+  # 文件上传配置
+  upload:
+    # 学生照片保存路径（使用绝对路径）
+    photo-path: D:/graduate/uploads/student-photos/
+    # 照片访问URL前缀（如果需要通过网络访问）
+    photo-url-prefix: /uploads/student-photos/
+
+# 服务器配置
+server:
+  port: 8080
+
+# MyBatis-Plus配置
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.example.serve.pojo 
+  type-aliases-package: com.example.serve.pojo
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
