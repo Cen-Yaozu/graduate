@@ -37,7 +37,12 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 uri.contains("/doc.html") ||
                 uri.contains("/webjars") ||
                 uri.contains("/v2/api-docs") ||
-                uri.contains("/swagger-resources")) {
+                uri.contains("/swagger-resources") ||
+                // 以下是新增的激活API路径
+                uri.contains("/api/verify-student") ||
+                uri.contains("/api/send-verification") ||
+                uri.contains("/api/activate-account")
+        ) {
             filterChain.doFilter(request, response);
             return;
         }

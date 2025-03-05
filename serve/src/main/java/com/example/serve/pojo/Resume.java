@@ -28,7 +28,7 @@ public class Resume implements Serializable {
 
      */
     @TableId(value = "studentNumber", type = IdType.NONE)
-    private Integer studentNumber;
+    private String studentNumber;
 
     /**
      * 开始时间

@@ -47,6 +47,14 @@
                   <el-form-item>
                     <el-button type="primary" style="margin-top:34px;width: 100%;height: 40px;background-color: #3a71a8" @click="login">登录</el-button>
                   </el-form-item>
+                  <el-form-item>
+                    <el-button type="success" style="margin-top:10px;width: 100%;height: 40px;" @click="goToActivate">账号激活</el-button>
+                  </el-form-item>
+                  <el-form-item>
+                    <div class="login-options">
+                      <span style="color: #3a71a8; cursor: pointer;" @click="findpassword = true">忘记密码?</span>
+                    </div>
+                  </el-form-item>
                 </el-form>
               </div>
             </div>
@@ -229,6 +237,9 @@ export default {
     resetLoginForm() {
       this.loginForm.studentNumber = '';
       this.loginForm.password = '';
+    },
+    goToActivate() {
+      this.$router.push('/activate');
     }
   }
 }
@@ -308,5 +319,12 @@ export default {
   height: 100%;
   cursor: pointer;
   vertical-align: middle;
+}
+/* 添加登录选项样式 */
+.login-options {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  font-size: 14px;
 }
 </style>

@@ -54,28 +54,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="scope">
             <div class="button-group">
-              <el-button type="primary" size="small" plain @click.stop="editStudent(scope.row)">编辑</el-button>
-              <el-button type="danger" size="small" plain @click.stop="deleteStudent(scope.row)">删除</el-button>
-              <el-dropdown @command="(command) => handleCommand(command, scope.row)" trigger="click">
-                <el-button size="small" plain type="info">
-                  更多<el-icon class="el-icon--right"><arrow-down /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="resetPassword">重置密码</el-dropdown-item>
-                    <el-dropdown-item command="viewPayment">查看缴费</el-dropdown-item>
-                    <el-dropdown-item command="updatePayment">
-                      {{ scope.row.paymentStatus === 1 ? '标记为未缴费' : '标记为已缴费' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="updateArrive">
-                      {{ scope.row.arriveStatus === 1 ? '标记为未抵校' : '标记为已抵校' }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              <el-button size="small" plain type="info" @click.stop="showStudentDetails(scope.row)">
+                更多
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -261,14 +245,13 @@
 
 <script>
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
-import { Search, ArrowDown, UploadFilled } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, UploadFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'StudentManageView',
   components: {
     Search,
-    ArrowDown,
     UploadFilled
   },
   setup() {
@@ -459,41 +442,15 @@ export default {
       })
     }
     
-    // 删除学生
-    const deleteStudent = (row) => {
-      ElMessageBox.confirm(
-        `确定要删除学生 ${row.studentName}(${row.studentNumber}) 吗？`,
-        '删除确认',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).then(async () => {
-        try {
-          const { data: result } = await proxy.$http.delete(`/api/admin/student/${row.studentNumber}`)
-          
-          if (result.code === 200) {
-            ElMessage.success('删除成功')
-            loadStudentList()
-          } else {
-            ElMessage.error(result.msg || '删除失败')
-          }
-        } catch (error) {
-          console.error('删除学生失败:', error)
-          ElMessage.error('删除学生失败')
-          // 模拟成功
-          loadStudentList()
-        }
-      }).catch(() => {
-        // 取消删除
-      })
+    // 显示学生详情
+    const showStudentDetails = (row) => {
+      selectedStudent.value = row
+      drawerVisible.value = true
     }
     
     // 打开详情抽屉
     const handleRowClick = (row) => {
-      selectedStudent.value = row
-      drawerVisible.value = true
+      showStudentDetails(row)
     }
     
     // 打开导入对话框
@@ -518,104 +475,6 @@ export default {
     // 下载模板
     const downloadTemplate = () => {
       window.open('/api/admin/student/import/template', '_blank')
-    }
-    
-    // 处理更多操作
-    const handleCommand = (command, row) => {
-      switch (command) {
-        case 'resetPassword':
-          resetPassword(row)
-          break
-        case 'viewPayment':
-          viewPayment(row)
-          break
-        case 'updatePayment':
-          updatePaymentStatus(row)
-          break
-        case 'updateArrive':
-          updateArriveStatus(row)
-          break
-        default:
-          break
-      }
-    }
-    
-    // 重置密码
-    const resetPassword = async (row) => {
-      try {
-        const { data: result } = await proxy.$http.post('/api/admin/student/reset-password', {
-          studentNumber: row.studentNumber
-        })
-        
-        if (result.code === 200) {
-          ElMessage.success(`已重置${row.studentName}的密码为初始密码`)
-        } else {
-          ElMessage.error(result.msg || '重置密码失败')
-        }
-      } catch (error) {
-        console.error('重置密码失败:', error)
-        ElMessage.error('重置密码失败')
-        // 模拟成功
-        ElMessage.success(`已重置${row.studentName}的密码为初始密码`)
-      }
-    }
-    
-    // 查看缴费
-    const viewPayment = (row) => {
-      // 实际项目中可能跳转到缴费记录页面
-      ElMessage.info(`查看学生${row.studentName}的缴费记录`)
-    }
-    
-    // 更新缴费状态
-    const updatePaymentStatus = async (row) => {
-      const newStatus = row.paymentStatus === 1 ? 0 : 1
-      try {
-        // 使用URLSearchParams构建表单数据
-        const params = new URLSearchParams();
-        params.append('studentNumber', row.studentNumber);
-        params.append('status', newStatus);
-        
-        const { data: result } = await proxy.$http.put('/api/payment/status', params)
-        
-        if (result.code === 200) {
-          ElMessage.success(`已将${row.studentName}的缴费状态修改为${newStatus === 1 ? '已缴费' : '未缴费'}`)
-          row.paymentStatus = newStatus
-        } else {
-          ElMessage.error(result.msg || '更新缴费状态失败')
-        }
-      } catch (error) {
-        console.error('更新缴费状态失败:', error)
-        ElMessage.error('更新缴费状态失败')
-        // 模拟成功
-        row.paymentStatus = newStatus
-        ElMessage.success(`已将${row.studentName}的缴费状态修改为${newStatus === 1 ? '已缴费' : '未缴费'}`)
-      }
-    }
-    
-    // 更新抵校状态
-    const updateArriveStatus = async (row) => {
-      const newStatus = row.arriveStatus === 1 ? 0 : 1
-      try {
-        // 使用URLSearchParams构建表单数据
-        const params = new URLSearchParams();
-        params.append('studentNumber', row.studentNumber);
-        params.append('status', newStatus);
-        
-        const { data: result } = await proxy.$http.put('/api/arrive/status', params)
-        
-        if (result.code === 200) {
-          ElMessage.success(`已将${row.studentName}的抵校状态修改为${newStatus === 1 ? '已抵校' : '未抵校'}`)
-          row.arriveStatus = newStatus
-        } else {
-          ElMessage.error(result.msg || '更新抵校状态失败')
-        }
-      } catch (error) {
-        console.error('更新抵校状态失败:', error)
-        ElMessage.error('更新抵校状态失败')
-        // 模拟成功
-        row.arriveStatus = newStatus
-        ElMessage.success(`已将${row.studentName}的抵校状态修改为${newStatus === 1 ? '已抵校' : '未抵校'}`)
-      }
     }
     
     onMounted(() => {
@@ -645,17 +504,12 @@ export default {
       openAddDialog,
       editStudent,
       submitForm,
-      deleteStudent,
       handleRowClick,
+      showStudentDetails,
       openImportDialog,
       handleFileChange,
       uploadFile,
       downloadTemplate,
-      handleCommand,
-      resetPassword,
-      viewPayment,
-      updatePaymentStatus,
-      updateArriveStatus,
       handleGoTo
     }
   }

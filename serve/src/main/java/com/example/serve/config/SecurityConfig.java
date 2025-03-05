@@ -46,7 +46,11 @@ public class SecurityConfig {
                         "/doc.html",
                         "/webjars/**",
                         "/v2/api-docs/**",
-                        "/swagger-resources/**")
+                        "/swagger-resources/**",
+                        // 添加激活相关的API路径，使它们不需要认证
+                        "/api/verify-student",
+                        "/api/send-verification",
+                        "/api/activate-account")
                         .permitAll()
                         .anyRequest()
                         .authenticated();
