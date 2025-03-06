@@ -11,10 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 缴费管理控制器
- *
- * @author author
- * @since 2025-02-23
+ * 学生缴费控制器
+ * 处理学生缴费相关的功能
  */
 @RestController
 @RequestMapping("/api/student")
@@ -24,25 +22,22 @@ public class StudentPaymentController {
     private PaymentService paymentService;
 
     /**
-     * 获取直通车缴费数据
+     * 简单获取学生缴费记录
+     * 直接通过学号查询pay表中的数据
+     * @param studentNumber 学生学号
+     * @return 缴费记录列表
      */
-    @GetMapping("/payment/fasttrack")
+    @GetMapping("/payment")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseResult<List<PayItem>> getFastTrackPayments(@RequestParam String studentNumber) {
-        try {
-            if (studentNumber == null || studentNumber.trim().isEmpty()) {
-                return ResponseResult.errorResult(400, "学号不能为空");
-            }
-            List<PayItem> payments = paymentService.getFastTrackPayments(studentNumber);
-            return ResponseResult.okResult(payments);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseResult.errorResult(500, "获取缴费数据失败: " + e.getMessage());
-        }
+    public ResponseResult<List<PayItem>> getStudentPayments(@RequestParam String studentNumber) {
+        List<PayItem> payments = paymentService.getPaymentListByStudentNumber(studentNumber);
+        return ResponseResult.okResult(payments);
     }
 
     /**
-     * 处理学生缴费请求
+     * 支付缴费项目
+     * @param paymentInfo 支付信息
+     * @return 支付结果
      */
     @PostMapping("/payment/pay")
     @PreAuthorize("hasRole('STUDENT')")

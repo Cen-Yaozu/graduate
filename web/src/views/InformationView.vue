@@ -233,9 +233,29 @@ export default {
                 this.studentForm.studentPhone = data.student.studentPhone || '';
                 this.studentForm.address = data.student.address || '';
                 
-                // 如果从服务器获取到数据，则直接将信息标记为已完成，不允许再次修改
-                this.isInfoCompleted = true;
-                ElMessage.info('信息已提交，不可再次修改');
+                // 检查是否所有必填字段都已填写
+                const isAllFieldsFilled = 
+                  this.studentForm.hometown && 
+                  this.studentForm.nation && 
+                  this.studentForm.politeAspect && 
+                  this.studentForm.studentPhone && 
+                  this.studentForm.address;
+                
+                // 检查是否有简历和家庭成员记录
+                const hasResume = data.resumes && data.resumes.length > 0 && 
+                  data.resumes.some(resume => resume.organization);
+                
+                const hasFamily = data.familyMembers && data.familyMembers.length > 0 && 
+                  data.familyMembers.some(family => family.familyName);
+                
+                // 只有当所有必填字段都已填写，才将表单标记为已完成
+                if (isAllFieldsFilled && hasResume && hasFamily) {
+                  this.isInfoCompleted = true;
+                  ElMessage.info('信息已全部填写完成，不可再次修改');
+                } else {
+                  this.isInfoCompleted = false;
+                  ElMessage.info('部分信息未填写，请完善信息后提交');
+                }
               }
               
               // 设置简历信息
@@ -375,6 +395,28 @@ export default {
         return;
       }
       
+      // 检查是否所有必填字段都已填写
+      if (!this.studentForm.address) {
+        ElMessage.warning('请填写详细通讯地址');
+        return;
+      }
+      
+      // 检查是否有简历信息
+      const hasValidResume = this.resumeData.some(item => 
+        item.organization && item.startTime && item.endTime);
+      if (!hasValidResume) {
+        ElMessage.warning('请至少填写一条完整的简历信息');
+        return;
+      }
+      
+      // 检查是否有家庭成员信息
+      const hasValidFamily = this.familyData.some(item => 
+        item.familyName && item.familyPart);
+      if (!hasValidFamily) {
+        ElMessage.warning('请至少填写一条完整的家庭成员信息');
+        return;
+      }
+      
       this.loading = true;
       
       // 处理数据
@@ -395,9 +437,20 @@ export default {
       this.$http.post('/api/freshman-report/save-all-info', allData)
         .then(response => {
           if (response.data.code === 200) {
-            ElMessage.success('信息保存成功');
-            // 标记信息已完成，禁用编辑
-            this.isInfoCompleted = true;
+            // 检查所有必填信息是否已填写完整
+            const isAllFieldsFilled = 
+              this.studentForm.hometown && 
+              this.studentForm.nation && 
+              this.studentForm.politeAspect && 
+              this.studentForm.studentPhone && 
+              this.studentForm.address;
+            
+            if (isAllFieldsFilled && hasValidResume && hasValidFamily) {
+              this.isInfoCompleted = true;
+              ElMessage.success('信息填写完整并保存成功，不可再次修改');
+            } else {
+              ElMessage.success('信息已保存，部分信息未完善，可继续编辑');
+            }
           } else {
             ElMessage.error(response.data.msg || '信息保存失败');
           }
@@ -405,9 +458,10 @@ export default {
         .catch(error => {
           console.error('保存失败:', error);
           if (error.response && error.response.status === 403) {
-            ElMessage.warning('信息已经提交，不允许再次修改');
-            // 标记信息已完成，禁用编辑
-            this.isInfoCompleted = true;
+            // 如果是权限错误，可能是因为信息已完全填写且提交
+            // 重新获取信息检查是否完整
+            this.initFormData();
+            ElMessage.warning('无法修改，可能信息已完全填写');
           } else {
             ElMessage.error('保存失败: ' + (error.response?.data?.msg || '服务器错误'));
           }

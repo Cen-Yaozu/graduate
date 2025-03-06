@@ -1,7 +1,7 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : 笔记本Mysql数据库
+ Source Server         : 本地mysql
  Source Server Type    : MySQL
  Source Server Version : 80032 (8.0.32)
  Source Host           : localhost:3306
@@ -11,7 +11,7 @@
  Target Server Version : 80032 (8.0.32)
  File Encoding         : 65001
 
- Date: 28/02/2025 17:32:15
+ Date: 06/03/2025 21:14:01
 */
 
 SET NAMES utf8mb4;
@@ -117,7 +117,7 @@ INSERT INTO `dorm` VALUES ('游戏系', '六人间', '宿舍楼3', '309', 6, 150
 INSERT INTO `dorm` VALUES ('游戏系', '六人间', '宿舍楼4', '404', 6, 1500, '女');
 INSERT INTO `dorm` VALUES ('游戏系', '六人间', '宿舍楼4', '405', 6, 1500, '女');
 INSERT INTO `dorm` VALUES ('游戏系', '六人间', '宿舍楼4', '406', 6, 1500, '女');
-INSERT INTO `dorm` VALUES ('数码媒体系', '四人间', '宿舍楼1', '110', 4, 3500, '男');
+INSERT INTO `dorm` VALUES ('数码媒体系', '四人间', '宿舍楼1', '110', 4, 3500, '女');
 INSERT INTO `dorm` VALUES ('数码媒体系', '四人间', '宿舍楼1', '111', 4, 3500, '男');
 INSERT INTO `dorm` VALUES ('数码媒体系', '四人间', '宿舍楼2', '208', 4, 3500, '女');
 INSERT INTO `dorm` VALUES ('数码媒体系', '四人间', '宿舍楼2', '209', 4, 3500, '女');
@@ -141,15 +141,23 @@ CREATE TABLE `family`  (
   `familyPoliteAspect` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '政治面貌\r\n',
   `familyOrganization` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '单位学习、工作\r\n',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of family
 -- ----------------------------
-INSERT INTO `family` VALUES (1, '123', '1', NULL, '4567', NULL, NULL);
-INSERT INTO `family` VALUES (2, '123', '2', NULL, NULL, NULL, NULL);
-INSERT INTO `family` VALUES (3, '123', '123', NULL, NULL, NULL, NULL);
-INSERT INTO `family` VALUES (4, '678', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `family` VALUES (9, '214073001', '父亲', '张伟', '48', '中共党员', '广州市某企业');
+INSERT INTO `family` VALUES (10, '214073001', '母亲', '李芳', '45', '群众', '广州市某学校');
+INSERT INTO `family` VALUES (11, '214073002', '父亲', '王强', '50', '中共党员', '深圳市某政府部门');
+INSERT INTO `family` VALUES (12, '214073002', '母亲', '赵敏', '48', '中共党员', '深圳市某医院');
+INSERT INTO `family` VALUES (13, '214073002', '弟弟', '王小明', '16', '共青团员', '深圳市某中学');
+INSERT INTO `family` VALUES (14, '214073003', '父亲', '刘军', '52', '中共党员', '上海市某企业');
+INSERT INTO `family` VALUES (15, '214073003', '母亲', '张丽', '50', '群众', '上海市某事业单位');
+INSERT INTO `family` VALUES (16, '214073004', '父亲', '陈明', '55', '民主人士', '北京市某大学');
+INSERT INTO `family` VALUES (17, '214073004', '母亲', '王芳', '53', '中共党员', '北京市某研究所');
+INSERT INTO `family` VALUES (18, '214073005', '父亲', '黄建国', '49', '中共党员', '武汉市某企业');
+INSERT INTO `family` VALUES (19, '214073005', '母亲', '张燕', '47', '群众', '武汉市某学校');
+INSERT INTO `family` VALUES (20, '214073005', '妹妹', '黄小红', '15', '共青团员', '武汉市某中学');
 
 -- ----------------------------
 -- Table structure for major
@@ -208,7 +216,7 @@ CREATE TABLE `payment_item`  (
   `grade` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '适用年级',
   `major` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '适用专业，为空表示所有专业',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费项目表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费项目表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of payment_item
@@ -235,7 +243,7 @@ CREATE TABLE `payment_record`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `payment_item_id`(`payment_item_id` ASC) USING BTREE,
   CONSTRAINT `payment_record_ibfk_1` FOREIGN KEY (`payment_item_id`) REFERENCES `payment_item` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费记录表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of payment_record
@@ -249,17 +257,30 @@ INSERT INTO `payment_record` VALUES (3, '2024002', 1, 4800.00, '支付宝', '202
 -- ----------------------------
 DROP TABLE IF EXISTS `resume`;
 CREATE TABLE `resume`  (
-  `studentNumber` int NOT NULL COMMENT '学号\r\n',
+  `id` int NOT NULL AUTO_INCREMENT,
+  `studentNumber` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '学号\r\n',
   `startTime` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '开始时间\r\n',
   `endTime` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '结束时间\r\n',
   `organization` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '单位学习、工作\r\n',
   `hats` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '职务\r\n',
-  PRIMARY KEY (`studentNumber`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of resume
 -- ----------------------------
+INSERT INTO `resume` VALUES (1, '214073001', '2019年9月', '2022年6月', '广州市第一中学', '学生');
+INSERT INTO `resume` VALUES (2, '214073001', '2022年9月', '2025年6月', '计算机科学与技术学院', '本科生');
+INSERT INTO `resume` VALUES (3, '214073002', '2018年9月', '2021年6月', '深圳市实验中学', '学生');
+INSERT INTO `resume` VALUES (4, '214073002', '2021年9月', '2024年6月', '软件工程学院', '本科生');
+INSERT INTO `resume` VALUES (5, '214073003', '2017年9月', '2020年6月', '上海市实验中学', '学生');
+INSERT INTO `resume` VALUES (6, '214073003', '2020年9月', '2023年6月', '信息工程学院', '本科生');
+INSERT INTO `resume` VALUES (7, '214073003', '2023年7月', '2023年8月', '字节跳动', '实习生');
+INSERT INTO `resume` VALUES (8, '214073004', '2019年9月', '2022年6月', '北京市第四中学', '学生');
+INSERT INTO `resume` VALUES (9, '214073004', '2022年9月', '2025年6月', '人工智能学院', '本科生');
+INSERT INTO `resume` VALUES (10, '214073005', '2018年9月', '2021年6月', '武汉市第二中学', '学生');
+INSERT INTO `resume` VALUES (11, '214073005', '2021年9月', '2024年6月', '数据科学与大数据技术专业', '本科生');
+INSERT INTO `resume` VALUES (12, '214073005', '2023年12月', '2024年2月', '腾讯', '实习生');
 
 -- ----------------------------
 -- Table structure for student
@@ -298,12 +319,12 @@ CREATE TABLE `student`  (
 -- ----------------------------
 -- Records of student
 -- ----------------------------
-INSERT INTO `student` VALUES (1, '4567891001', '214073001', '钱梦娇', NULL, '男', '2006-09-10', '广东省中山市中山市', NULL, '身份证', '442000200609103879', NULL, '528400 ', '15255715527', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', '四人间', NULL, NULL, NULL, NULL, 401);
-INSERT INTO `student` VALUES (2, '4567891002', '214073002', '侯招弟', NULL, '女', '2006-04-05', '广东省中山市中山市', NULL, '身份证', '442000200604059581', NULL, '528400 ', '13707533319', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (3, '4567891003', '214073003', '西门龙婷', NULL, '女', '2006-04-14', '广东省中山市中山市', NULL, '身份证', '442000200604140443', NULL, '528400 ', '13354924193', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `student` VALUES (1, '4567891001', '214073001', '钱梦娇', '/uploads/student-photos/669463fa-a0b8-40cf-9443-80230f6befc4.jpg', '男', '2006-09-10', '广东省中山市中山市', NULL, '身份证', '442000200609103879', NULL, '528400 ', '15255715527', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', '四人间', NULL, NULL, NULL, NULL, 401);
+INSERT INTO `student` VALUES (2, '4567891002', '214073002', '侯招弟', NULL, '女', '2006-04-05', '广东省中山市中山市', NULL, '身份证', '442000200604059581', NULL, '528400 ', '13707533319', NULL, '计算机科学与技术', '2021级', '本科', 'cenyaozu@126.com', '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', 101);
+INSERT INTO `student` VALUES (3, '4567891003', '214073003', '西门龙婷', NULL, '女', '2006-04-14', '广东省中山市中山市', NULL, '身份证', '442000200604140443', NULL, '528400 ', '13354924193', NULL, '计算机科学与技术', '2021级', '本科', 'cenyaozu@126.com', '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
 INSERT INTO `student` VALUES (4, '4567891004', '214073004', '曹黄萍', NULL, '女', '2006-11-10', '广东省中山市中山市', NULL, '身份证', '442000200611103800', NULL, '528400 ', '15065724113', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (5, '4567891005', '214073005', '尤岚', NULL, '女', '2006-11-18', '广东省中山市中山市', NULL, '身份证', '442000200611188445', NULL, '528400 ', '15589739287', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (6, '4567891006', '214073006', '郑子鑫', NULL, '女', '2006-09-17', '广东省中山市中山市', NULL, '身份证', '442000200609176306', NULL, '528400 ', '15207468250', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼2', '202', NULL);
+INSERT INTO `student` VALUES (5, '4567891005', '214073005', '尤岚', NULL, '女', '2006-11-18', '广东省中山市中山市', NULL, '身份证', '442000200611188445', NULL, '528400 ', '15589739287', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
+INSERT INTO `student` VALUES (6, '4567891006', '214073006', '郑子鑫', NULL, '女', '2006-09-17', '广东省中山市中山市', NULL, '身份证', '442000200609176306', NULL, '528400 ', '15207468250', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
 INSERT INTO `student` VALUES (7, '4567891007', '214073007', '尤有菊', NULL, '女', '2006-01-15', '广东省中山市中山市', NULL, '身份证', '442000200601158322', NULL, '528400 ', '13923404505', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼2', '202', NULL);
 INSERT INTO `student` VALUES (8, '4567891008', '214073008', '褚燕', NULL, '男', '2006-03-25', '广东省中山市中山市', NULL, '身份证', '442000200603252099', NULL, '528400 ', '13923263024', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO `student` VALUES (9, '4567891009', '214073009', '韩睿敏', NULL, '男', '2006-08-23', '广东省中山市中山市', NULL, '身份证', '44200020060823915X', NULL, '528400 ', '18868557032', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
@@ -516,6 +537,10 @@ CREATE TABLE `student_dorm`  (
 -- Records of student_dorm
 -- ----------------------------
 INSERT INTO `student_dorm` VALUES (214073001, NULL, NULL, '四人间', NULL, NULL);
+INSERT INTO `student_dorm` VALUES (214073002, '侯招弟', '计算机系', '四人间', '宿舍楼1', '110');
+INSERT INTO `student_dorm` VALUES (214073005, '尤岚', '计算机系', '四人间', '宿舍楼1', '110');
+INSERT INTO `student_dorm` VALUES (214073006, '郑子鑫', '计算机系', '四人间', '宿舍楼1', '110');
+INSERT INTO `student_dorm` VALUES (214073003, '西门龙婷', '计算机系', '四人间', '宿舍楼1', '110');
 
 -- ----------------------------
 -- Table structure for t_authority
@@ -543,7 +568,7 @@ CREATE TABLE `t_user_authority`  (
   `user_id` int NULL DEFAULT NULL,
   `authority_id` int NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of t_user_authority
@@ -551,6 +576,8 @@ CREATE TABLE `t_user_authority`  (
 INSERT INTO `t_user_authority` VALUES (1, 1, 1);
 INSERT INTO `t_user_authority` VALUES (2, 2, 0);
 INSERT INTO `t_user_authority` VALUES (3, 3, 2);
+INSERT INTO `t_user_authority` VALUES (4, 4, 1);
+INSERT INTO `t_user_authority` VALUES (5, 5, 1);
 
 -- ----------------------------
 -- Table structure for teacher
@@ -592,7 +619,7 @@ CREATE TABLE `user`  (
   `studentNumber` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -600,5 +627,7 @@ CREATE TABLE `user`  (
 INSERT INTO `user` VALUES (1, '214073001', '{noop}123456');
 INSERT INTO `user` VALUES (2, '1234567', '{noop}1234567');
 INSERT INTO `user` VALUES (3, 'admin', '{noop}admin');
+INSERT INTO `user` VALUES (4, '214073002', '{noop}123456');
+INSERT INTO `user` VALUES (5, '214073003', '{noop}123456');
 
 SET FOREIGN_KEY_CHECKS = 1;

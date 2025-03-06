@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.serve.pojo.PayItem;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 缴费项目服务接口
@@ -15,8 +16,6 @@ import java.util.List;
  * @since 2025-02-27
  */
 public interface PaymentService {
-
-    List<PayItem> getFastTrackPayments(String studentNumber);
 
     /**
      * 根据ID获取缴费项目
@@ -76,4 +75,12 @@ public interface PaymentService {
      * @return 缴费记录
      */
     PayItem getPayItemByStudentNumber(String studentNumber);
+
+    /**
+     * 根据学生学号获取缴费记录列表
+     * 
+     * @param studentNumber 学生学号
+     * @return 该学生的所有缴费记录列表
+     */
+    List<PayItem> getPaymentListByStudentNumber(String studentNumber);
 }
