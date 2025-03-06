@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -36,6 +37,9 @@ public class SecurityConfig {
 
         // 添加调试日志，打印请求路径和权限信息
         System.out.println("配置Security过滤链...");
+        
+        // 设置session管理策略为无状态（JWT不需要session）
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.authorizeHttpRequests(auth -> {
             try {
@@ -52,21 +56,20 @@ public class SecurityConfig {
                         "/api/send-verification",
                         "/api/activate-account",
                         "/api/verify-code",
-                        "/arrive/**",
-                        "/api/student/arrive/**",
-                        "/api/freshman-report/**")
+                        // 添加所有可能的静态资源访问路径
+                        "/uploads/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated();
 
-                System.out.println("Security权限配置完成");
+                System.out.println("Security权限配置完成，静态资源路径 '/uploads/**' 已配置为公开访问");
             } catch (Exception e) {
                 System.out.println("Security配置异常: " + e.getMessage());
                 e.printStackTrace();
             }
         });
 
-        // 配置过滤器
+        // 添加JWT过滤器
         http.addFilterBefore(jwtAuthenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

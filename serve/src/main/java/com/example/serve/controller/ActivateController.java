@@ -168,6 +168,8 @@ public class ActivateController {
         String password = (String) requestBody.get("password");
         String email = (String) requestBody.get("email");
         String verificationCode = (String) requestBody.get("verificationCode");
+        // 获取可选的验证标记
+        Boolean codeVerified = (Boolean) requestBody.get("codeVerified");
 
         // 验证参数是否为空
         if (!StringUtils.hasText(studentNumber) || !StringUtils.hasText(password)) {
@@ -188,13 +190,17 @@ public class ActivateController {
             return ResponseResult.errorResult(400, "密码长度不能少于6位");
         }
 
-        // 验证码验证
-        if (StringUtils.hasText(verificationCode)) {
-            boolean codeValid = emailService.verifyCode(studentNumber, verificationCode);
-
-            if (!codeValid) {
-                return ResponseResult.errorResult(400, "验证码错误或已过期");
+        // 只有当未验证过且提供了验证码时才进行验证
+        if (codeVerified == null || !codeVerified) {
+            if (StringUtils.hasText(verificationCode)) {
+                boolean codeValid = emailService.verifyCode(studentNumber, verificationCode);
+    
+                if (!codeValid) {
+                    return ResponseResult.errorResult(400, "验证码错误或已过期");
+                }
             }
+        } else {
+            System.out.println("验证码已在之前验证通过，跳过验证步骤");
         }
 
         // 创建新用户
@@ -209,6 +215,17 @@ public class ActivateController {
             int result = userMapper.insert(newUser);
 
             if (result > 0) {
+                // 为用户分配STUDENT角色
+                Integer roleId = userMapper.getAuthorityIdByName("ROLE_STUDENT");
+                
+                if (roleId == null) {
+                    System.out.println("警告: 未找到STUDENT角色，需要检查数据库配置");
+                } else {
+                    // 新增用户-角色关联
+                    userMapper.insertUserAuthority(newUser.getId(), roleId);
+                    System.out.println("成功为用户 " + studentNumber + " 分配STUDENT角色");
+                }
+                
                 // 成功创建用户后，可以更新学生表中的邮箱信息
                 QueryWrapper<Student> studentQuery = new QueryWrapper<>();
                 studentQuery.eq("studentNumber", studentNumber);

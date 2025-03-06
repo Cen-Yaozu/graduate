@@ -38,7 +38,7 @@
             <template #extra>
               <div v-if="selectedInfo.dormitory">
                 <p>已分配宿舍：{{ selectedInfo.dormitory }}</p>
-                <p v-if="selectedInfo.dormCard">宿舍卡号：{{ selectedInfo.dormCard }}</p>
+                <p v-if="selectedInfo.dormCard">宿舍号：{{ selectedInfo.dormCard }}</p>
               </div>
               <div v-else>
                 <p>宿舍类型已选择，等待管理员分配宿舍</p>

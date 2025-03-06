@@ -3,6 +3,7 @@ package com.example.serve.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Value("${spring.mail.username}")
     private String sender;
@@ -77,7 +78,14 @@ public class EmailService {
 
         // 将验证码存储到Redis中，设置过期时间
         String key = CODE_PREFIX + studentNumber;
-        redisTemplate.opsForValue().set(key, verificationCode, CODE_EXPIRATION_MINUTES, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(key, verificationCode, CODE_EXPIRATION_MINUTES, TimeUnit.MINUTES);
+        
+        // 添加日志
+        System.out.println("储存验证码到Redis - 键: " + key + ", 值: " + verificationCode + ", 过期时间: " + CODE_EXPIRATION_MINUTES + "分钟");
+        
+        // 检查是否成功存储
+        String savedCode = stringRedisTemplate.opsForValue().get(key);
+        System.out.println("从Redis读取验证码 - 键: " + key + ", 值: " + savedCode);
 
         return verificationCode;
     }
@@ -91,25 +99,31 @@ public class EmailService {
      */
     public boolean verifyCode(String studentNumber, String code) {
         if (studentNumber == null || code == null) {
+            System.out.println("验证失败: 学号或验证码为空");
             return false;
         }
 
         // 从Redis中获取验证码
         String key = CODE_PREFIX + studentNumber;
-        String savedCode = redisTemplate.opsForValue().get(key);
+        String savedCode = stringRedisTemplate.opsForValue().get(key);
+        
+        System.out.println("验证码验证 - 键: " + key + ", 存储的值: " + savedCode + ", 输入的值: " + code);
 
         // 验证码不存在或已过期
         if (savedCode == null) {
+            System.out.println("验证失败: 验证码不存在或已过期");
             return false;
         }
 
         // 验证码匹配
         if (savedCode.equals(code)) {
             // 验证成功后删除验证码
-            redisTemplate.delete(key);
+            stringRedisTemplate.delete(key);
+            System.out.println("验证成功: 验证码匹配，已从Redis删除");
             return true;
         }
 
+        System.out.println("验证失败: 验证码不匹配");
         return false;
     }
 }

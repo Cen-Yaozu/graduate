@@ -25,7 +25,13 @@ axios.interceptors.request.use(config => {
             console.log('请求拦截器 - 保持原有token:', token);
         }
     }
-    config.headers['Content-Type'] = 'application/json';
+    
+    // 如果是FormData类型的请求（文件上传），不要手动设置Content-Type
+    // axios会自动设置正确的Content-Type和boundary
+    if (!(config.data instanceof FormData)) {
+        config.headers['Content-Type'] = 'application/json';
+    }
+    
     return config;
 }, error => {
     // 处理请求错误

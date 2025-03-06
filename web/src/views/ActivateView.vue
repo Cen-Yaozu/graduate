@@ -107,6 +107,11 @@
         
         <div class="form-actions">
           <el-button 
+            v-show="currentStep > 0 && currentStep !== 3" 
+            @click="prev">
+            上一步
+          </el-button>
+          <el-button 
             v-show="currentStep !== 3" 
             type="primary" 
             @click="next">
@@ -125,7 +130,7 @@
 </template>
 
 <script>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 export default {
   name: "ActivateView",
@@ -214,9 +219,123 @@ export default {
       }
     }
   },
+  created() {
+    // 从session中恢复可能存在的数据
+    this.loadDataFromSession();
+  },
   methods: {
+    // 从sessionStorage加载数据
+    loadDataFromSession() {
+      // 尝试加载第一步数据
+      const step1Data = sessionStorage.getItem('activate_step1');
+      if (step1Data) {
+        try {
+          const data = JSON.parse(step1Data);
+          this.check.admissionTicket = data.admissionTicket || '';
+          this.check.studentName = data.studentName || '';
+          this.check.idType = data.idType || '身份证';
+          this.check.idCard = data.idCard || '';
+        } catch (e) {
+          console.error('解析session数据出错:', e);
+        }
+      }
+      
+      // 尝试加载第二步数据
+      const step2Data = sessionStorage.getItem('activate_step2');
+      if (step2Data) {
+        try {
+          const data = JSON.parse(step2Data);
+          this.check.email = data.email || '';
+          this.check.textcode = data.textcode || '';
+        } catch (e) {
+          console.error('解析session数据出错:', e);
+        }
+      }
+      
+      // 尝试加载第三步数据
+      const step3Data = sessionStorage.getItem('activate_step3');
+      if (step3Data) {
+        try {
+          const data = JSON.parse(step3Data);
+          this.check.pass = data.pass || '';
+          this.check.checkPass = data.checkPass || '';
+        } catch (e) {
+          console.error('解析session数据出错:', e);
+        }
+      }
+    },
+    
+    // 清理所有session数据
+    clearAllSessionData() {
+      sessionStorage.removeItem('activate_step1');
+      sessionStorage.removeItem('activate_step2');
+      sessionStorage.removeItem('activate_step3');
+    },
+    
     goBack() {
+      // 清理所有session数据
+      this.clearAllSessionData();
       this.$router.push('/login');
+    },
+    prev() {
+      // 根据当前步骤显示确认提示
+      let confirmMessage = '';
+      
+      if (this.currentStep === 1) {
+        if (this.check.email || this.check.textcode) {
+          confirmMessage = '返回上一步将清空已填写的邮箱和验证码信息，确定要返回吗？';
+        }
+      } else if (this.currentStep === 2) {
+        if (this.check.pass || this.check.checkPass) {
+          confirmMessage = '返回上一步将清空已设置的密码信息，确定要返回吗？';
+        }
+      }
+      
+      // 如果有已填写的信息，显示确认对话框
+      const goBack = () => {
+        if (this.currentStep === 1) {
+          // 从步骤2返回步骤1，清空邮箱和验证码信息
+          this.check.email = '';
+          this.check.textcode = '';
+          
+          // 清除session中的步骤2数据
+          sessionStorage.removeItem('activate_step2');
+          
+          // 清除可能的定时器
+          if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.codeSent = false;
+            this.codeButtonText = '获取验证码';
+          }
+        } else if (this.currentStep === 2) {
+          // 从步骤3返回步骤2，清空密码信息
+          this.check.pass = '';
+          this.check.checkPass = '';
+          
+          // 清除session中的步骤3数据
+          sessionStorage.removeItem('activate_step3');
+        }
+        
+        // 返回上一步
+        this.currentStep--;
+      };
+      
+      if (confirmMessage) {
+        ElMessageBox.confirm(confirmMessage, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+          .then(() => {
+            goBack();
+          })
+          .catch(() => {
+            // 用户取消，不执行任何操作
+          });
+      } else {
+        // 没有需要确认的信息，直接返回
+        goBack();
+      }
     },
     next() {
       if (this.currentStep === 0) {
@@ -225,6 +344,14 @@ export default {
             this.check.studentName && 
             this.check.idType && 
             this.check.idCard) {
+          
+          // 将第一步数据存储到session存储
+          sessionStorage.setItem('activate_step1', JSON.stringify({
+            admissionTicket: this.check.admissionTicket,
+            studentName: this.check.studentName,
+            idType: this.check.idType,
+            idCard: this.check.idCard
+          }));
           
           // 所有必填字段都有值，直接调用API
           ElMessage.info('正在验证考生信息...');
@@ -256,6 +383,12 @@ export default {
           return;
         }
         
+        // 将第二步数据存储到session存储
+        sessionStorage.setItem('activate_step2', JSON.stringify({
+          email: this.check.email,
+          textcode: this.check.textcode
+        }));
+        
         // 调用后端API验证验证码
         this.$http.post('/api/verify-code', {
           studentNumber: this.check.studentNumber,
@@ -275,6 +408,12 @@ export default {
         });
       } else if (this.currentStep === 2) {
         if (this.check.pass && this.check.pass.length >= 6 && this.check.pass === this.check.checkPass) {
+          // 将第三步数据存储到session存储
+          sessionStorage.setItem('activate_step3', JSON.stringify({
+            pass: this.check.pass,
+            checkPass: this.check.checkPass
+          }));
+          
           // 密码设置正确，调用API
           this.activateAccount();
         } else {
@@ -392,11 +531,15 @@ export default {
         studentNumber: this.check.studentNumber,
         password: this.check.pass,
         email: this.check.email,
-        verificationCode: this.check.textcode
+        verificationCode: this.check.textcode,
+        codeVerified: true // 标记验证码已在前一步验证过
       }).then(response => {
         console.log('激活账号响应:', response.data);
         
         if (response.data.code === 200) {
+          // 激活成功，清理所有session数据
+          this.clearAllSessionData();
+          
           // 激活成功
           ElMessage.success('账号激活成功');
           this.currentStep++;
@@ -410,6 +553,8 @@ export default {
       });
     },
     toLogin() {
+      // 清理所有session数据
+      this.clearAllSessionData();
       this.$router.push('/login');
     }
   },
@@ -471,6 +616,7 @@ export default {
   justify-content: center;
   margin-top: 10px;
   padding: 10px 0;
+  gap: 15px; /* 添加按钮之间的间距 */
 }
 
 /* 跳过链接样式 */

@@ -5,6 +5,7 @@ import com.example.serve.service.ArriveService;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +25,7 @@ public class ArriveController {
      * 用于前端检查是否已经提交过信息
      */
     @GetMapping("/info")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult getArriveInfo(@RequestParam String studentNumber) {
         try {
             if (studentNumber == null || studentNumber.isEmpty()) {
@@ -58,6 +60,7 @@ public class ArriveController {
      * 对接前端ArriveView.vue页面
      */
     @PostMapping("/update")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult updateArrive(@RequestBody Arrive arrive) {
         try {
             // 检查学号是否存在于请求体中

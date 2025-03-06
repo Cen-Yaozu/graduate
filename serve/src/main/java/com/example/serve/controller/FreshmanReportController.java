@@ -11,17 +11,21 @@ import com.example.serve.pojo.Student;
 import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 新生报道控制器
@@ -51,15 +55,21 @@ public class FreshmanReportController {
      * 将照片保存在服务器，并更新学生表中的照片路径
      */
     @PostMapping("/upload-photo")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult<Void> uploadPhoto(@RequestParam("file") MultipartFile file, 
                                            @RequestParam("studentNumber") String studentNumber) {
         try {
+            // 调试日志
+            System.out.println("收到照片上传请求 - 学号: " + studentNumber + ", 文件名: " + (file != null ? file.getOriginalFilename() : "文件为空"));
+            
             // 验证参数
-            if (file.isEmpty()) {
+            if (file == null || file.isEmpty()) {
+                System.out.println("上传失败: 文件为空");
                 return ResponseResult.errorResult(400, "请选择要上传的照片");
             }
             
             if (studentNumber == null || studentNumber.trim().isEmpty()) {
+                System.out.println("上传失败: 学号为空");
                 return ResponseResult.errorResult(400, "学号不能为空");
             }
             
@@ -75,9 +85,13 @@ public class FreshmanReportController {
             if (!dir.exists()) {
                 boolean created = dir.mkdirs();
                 if (!created) {
+                    System.out.println("上传失败: 无法创建目录 " + uploadPhotoPath);
                     return ResponseResult.errorResult(500, "无法创建文件上传目录，请检查路径权限");
                 }
             }
+            
+            // 打印完整路径，用于调试
+            System.out.println("保存照片到: " + dir.getAbsolutePath() + File.separator + newFilename);
             
             // 保存文件到服务器
             File destFile = new File(dir.getAbsolutePath() + File.separator + newFilename);
@@ -85,14 +99,23 @@ public class FreshmanReportController {
             
             // 将照片的URL路径保存到数据库
             String photoUrl = photoUrlPrefix + newFilename;
+            System.out.println("照片URL: " + photoUrl);
+            
+            // 先通过学号查询学生信息
+            QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("studentNumber", studentNumber);
+            Student existingStudent = studentMapper.selectOne(queryWrapper);
+            
+            if (existingStudent == null) {
+                System.out.println("上传失败: 未找到学号为 " + studentNumber + " 的学生");
+                return ResponseResult.errorResult(404, "未找到对应学生信息");
+            }
             
             // 更新学生信息
-            Student student = new Student();
-            student.setStudentNumber(studentNumber);
-            student.setStudentPicture(photoUrl);
+            existingStudent.setStudentPicture(photoUrl);
             
             // 使用MyBatis-Plus的updateById方法更新数据库
-            int result = studentMapper.updateById(student);
+            int result = studentMapper.updateById(existingStudent);
             
             if (result > 0) {
                 return ResponseResult.okResult(200, "照片上传成功");
@@ -178,6 +201,7 @@ public class FreshmanReportController {
      * 根据学号获取学生的完整信息（基本信息、简历信息和家庭成员信息）
      */
     @GetMapping("/get-student-info")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult<StudentInfoDTO> getStudentInfo(@RequestParam("studentNumber") String studentNumber) {
         try {
             // 验证参数
@@ -237,6 +261,50 @@ public class FreshmanReportController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseResult.errorResult(500, "获取学生信息失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 添加获取照片的API
+     */
+    @GetMapping("/get-photo")
+    public void getPhoto(@RequestParam("path") String photoPath, HttpServletResponse response) throws IOException {
+        try {
+            // 从路径中提取文件名
+            String fileName = photoPath;
+            if (photoPath.startsWith("/")) {
+                fileName = photoPath.substring(1);
+            }
+            if (photoPath.contains("/")) {
+                fileName = photoPath.substring(photoPath.lastIndexOf("/") + 1);
+            }
+            
+            // 构建完整物理路径
+            String fullPath = uploadPhotoPath + File.separator + fileName;
+            File file = new File(fullPath);
+            
+            // 安全检查：确保文件存在且在允许的目录内
+            if (!file.exists()) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "File not found");
+                return;
+            }
+            
+            // 设置响应头
+            response.setContentType("image/jpeg");
+            response.setHeader("Cache-Control", "max-age=604800"); // 缓存一周
+            
+            // 输出文件内容
+            try (FileInputStream in = new FileInputStream(file);
+                 OutputStream out = response.getOutputStream()) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error reading file");
         }
     }
     
