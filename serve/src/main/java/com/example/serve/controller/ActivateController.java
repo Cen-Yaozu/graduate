@@ -29,7 +29,7 @@ public class ActivateController {
 
     @Autowired
     private UserMapper userMapper;
-    
+
     @Autowired
     private EmailService emailService;
 
@@ -80,6 +80,20 @@ public class ActivateController {
                 data.put("studentNumber", student.getStudentNumber());
             }
 
+            // 检查学生是否已经拥有系统账号（查找user表中是否有对应的studentNumber）
+            QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+            userQueryWrapper.eq("studentNumber", data.get("studentNumber"));
+            User user = userMapper.selectOne(userQueryWrapper);
+
+            // 如果用户账号存在，表示已激活
+            if (user != null) {
+                data.put("isActivated", "true");
+                System.out.println("学生" + data.get("studentNumber") + "已有账号，直接跳到最后一步");
+            } else {
+                data.put("isActivated", "false");
+                System.out.println("学生" + data.get("studentNumber") + "未激活账号，需完成激活流程");
+            }
+
             return new ResponseResult<>(200, "考生信息验证成功", data);
         } else {
             return ResponseResult.errorResult(404, "信息不正确，请重新输入");
@@ -109,10 +123,10 @@ public class ActivateController {
         try {
             // 发送验证码邮件
             String verificationCode = emailService.sendVerificationEmail(email, studentNumber);
-            
+
             // 记录日志
             System.out.println("向 " + email + " 发送验证码: " + verificationCode);
-            
+
             return ResponseResult.okResult(200, "验证码已发送，请查收邮箱");
         } catch (Exception e) {
             e.printStackTrace();
@@ -128,15 +142,15 @@ public class ActivateController {
     public ResponseResult<Void> verifyCode(@RequestBody Map<String, Object> requestBody) {
         String studentNumber = (String) requestBody.get("studentNumber");
         String verificationCode = (String) requestBody.get("verificationCode");
-        
+
         // 验证参数是否为空
         if (!StringUtils.hasText(studentNumber) || !StringUtils.hasText(verificationCode)) {
             return ResponseResult.errorResult(400, "学号和验证码不能为空");
         }
-        
+
         // 调用EmailService的verifyCode方法验证验证码
         boolean isValid = emailService.verifyCode(studentNumber, verificationCode);
-        
+
         if (isValid) {
             return ResponseResult.okResult(200, "验证成功");
         } else {
@@ -177,7 +191,7 @@ public class ActivateController {
         // 验证码验证
         if (StringUtils.hasText(verificationCode)) {
             boolean codeValid = emailService.verifyCode(studentNumber, verificationCode);
-            
+
             if (!codeValid) {
                 return ResponseResult.errorResult(400, "验证码错误或已过期");
             }

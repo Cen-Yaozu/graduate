@@ -53,7 +53,7 @@ public class StudentArriveController {
      * 获取学生抵校详细信息
      */
     @GetMapping("/info/{studentNumber}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_STUDENT', 'ROLE_ADMIN')")
     public ResponseResult getArriveInfo(@PathVariable String studentNumber) {
         Arrive arrive = arriveService.findByStudentNumber(studentNumber);
         if (arrive != null) {

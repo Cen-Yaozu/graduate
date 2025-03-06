@@ -8,14 +8,17 @@ spring:
     url: jdbc:mysql://localhost:3306/bs?serverTimezone=UTC&useSSL=false
     username: root
     password: woalzm13.
-  
-  # Redis配置（已注释掉，因为不使用）
-  # data:
-  #   redis:
-  #     database: 0
-  #     host: 127.0.0.1
-  #     port: 6379
-  
+
+  # Redis配置
+  data:
+    redis:
+      database: 0
+      host: 127.0.0.1
+      port: 6379
+      timeout: 5000
+      # 如果有密码请取消注释并设置密码
+      # password: yourpassword
+
   # Jackson配置
   jackson:
     date-format: java.text.SimpleDateFormat
@@ -25,8 +28,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: 您的邮箱账号@qq.com
-    password: 您的邮箱授权码
+    username: ljq2336856534@qq.com
+    password: cbywpsrqkseqecda
     properties:
       mail:
         smtp:

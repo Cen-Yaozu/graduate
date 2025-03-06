@@ -42,7 +42,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 uri.contains("/api/verify-student") ||
                 uri.contains("/api/send-verification") ||
                 uri.contains("/api/activate-account") ||
-                uri.contains("/arrive")
+                uri.contains("api/verify-code")
         ) {
             filterChain.doFilter(request, response);
             return;

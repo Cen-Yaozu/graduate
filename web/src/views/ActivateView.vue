@@ -99,8 +99,8 @@
           <div v-show="currentStep === 3" class="completion-step">
             <el-result
               icon="success"
-              title="账号激活成功"
-              sub-title="欢迎你加入广州软件学院">
+              :title="check.pass ? '账号激活成功' : '已激活账号'"
+              :sub-title="check.pass ? '欢迎你加入广州软件学院' : `您的账号已经完成激活，学号为：${check.studentNumber}，可以直接使用学号登录系统`">
             </el-result>
           </div>
         </el-form>
@@ -301,10 +301,19 @@ export default {
         console.log('验证响应:', response.data);
         
         if (response.data.code === 200) {
-          // 验证成功，设置学号并进入下一步
+          // 验证成功，设置学号
           this.check.studentNumber = response.data.data.studentNumber;
-          ElMessage.success('考生信息验证成功');
-          this.currentStep++;
+          
+          // 检查用户是否已经激活
+          if (response.data.data.isActivated === "true") {
+            // 已激活，直接跳转到最后一步
+            ElMessage.info(`该账号已完成激活，学号为：${this.check.studentNumber}`);
+            this.currentStep = 3; // 直接跳转到最后一步（激活完成）
+          } else {
+            // 未激活，正常进入下一步
+            ElMessage.success('考生信息验证成功');
+            this.currentStep++;
+          }
         } else {
           // 验证失败，显示错误消息
           ElMessage.error(response.data.msg || '信息不正确，请重新输入');

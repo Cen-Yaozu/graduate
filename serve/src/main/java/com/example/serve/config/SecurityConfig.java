@@ -51,6 +51,7 @@ public class SecurityConfig {
                         "/api/verify-student",
                         "/api/send-verification",
                         "/api/activate-account",
+                        "/api/verify-code",
                         "/arrive/**",
                         "/api/student/arrive/**",
                         "/api/freshman-report/**")

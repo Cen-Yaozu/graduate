@@ -93,17 +93,11 @@ name: 'StudentSHomeView',
   },
   methods: {
     handleLogout() {
-      // 清除会话存储中的所有信息
-      window.sessionStorage.removeItem('token');
-      window.sessionStorage.removeItem('role');
-      window.sessionStorage.removeItem('userRole');
-      window.sessionStorage.removeItem('studentNumber');
-      window.sessionStorage.removeItem('studentName');
+      // 这里不需要清除会话存储中的信息，只是导航到新生报到页面
+      ElMessage.success('已退出管理界面');
       
-      ElMessage.success('已成功退出系统');
-      
-      // 跳转到登录页
-      router.push('/login');
+      // 跳转到新生报到页面
+      router.push('/freshmanreport');
     }
   }
 }
