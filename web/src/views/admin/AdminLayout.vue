@@ -105,6 +105,12 @@ export default {
 <style scoped>
 .admin-layout {
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.el-container {
+  height: 100%;
 }
 
 .el-header {
@@ -115,15 +121,22 @@ export default {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  padding: 0 20px;
 }
 
 .el-aside {
   background-color: #304156;
   color: #bfcbd9;
+  height: 100vh;
+  box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+  position: relative;
+  z-index: 10;
+  overflow-y: auto;
 }
 
 .el-menu {
   border-right: none;
+  height: calc(100vh - 60px);
 }
 
 .logo {
@@ -134,6 +147,9 @@ export default {
   font-weight: bold;
   color: #fff;
   background-color: #263445;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.1);
+  position: relative;
+  z-index: 1;
 }
 
 .header-right {
@@ -148,5 +164,20 @@ export default {
 .el-dropdown-link {
   cursor: pointer;
   color: #409EFF;
+}
+
+/* 侧边栏菜单项样式优化 */
+:deep(.el-menu-item) {
+  height: 56px;
+  line-height: 56px;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #263445 !important;
+  border-left: 4px solid #409EFF;
+}
+
+:deep(.el-menu-item:hover) {
+  background-color: #263445 !important;
 }
 </style> 

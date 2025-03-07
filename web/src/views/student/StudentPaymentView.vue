@@ -8,65 +8,34 @@
         </div>
       </template>
 
-      <div class="payment-content">
-        <el-divider>缴费记录</el-divider>
-        
-        <el-table 
-          :data="payments" 
-          style="width: 100%; margin-top: 20px" 
-          v-loading="loading"
-          border
-        >
-          <el-table-column prop="studentName" label="姓名" width="120">
-            <template #default="scope">
-              {{ scope.row.studentName || '未知' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="amountcard" label="缴费编号" width="150">
-            <template #default="scope">
-              {{ scope.row.amountcard || '无' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="hallway" label="缴费通道" width="120">
-            <template #default="scope">
-              {{ scope.row.hallway || '无' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="allmoney" label="总金额" width="120">
-            <template #default="scope">
-              ¥{{ scope.row.allmoney || 0 }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="indentStatue" label="订单状态" width="120">
-            <template #default="scope">
-              <el-tag :type="(scope.row.indentStatue === '已支付') ? 'success' : 'danger'">
-                {{ scope.row.indentStatue || '未支付' }}
+      <div class="payment-content" v-loading="loading">
+        <div v-if="paymentInfo" class="payment-info">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="姓名">
+              {{ paymentInfo.studentName || '未知' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="缴费编号">
+              {{ paymentInfo.amountcard || '无' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="缴纳项目">
+              广州软件学院综合收费
+            </el-descriptions-item>
+            <el-descriptions-item label="缴费通道">
+              {{ paymentInfo.hallway || '无' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="总金额">
+              <span class="amount">¥{{ paymentInfo.allmoney || 0 }}</span>
+              <span class="amount-desc">（总金额=宿舍费+学费+医保）</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="订单状态">
+              <el-tag :type="(paymentInfo.indentStatue === '已支付') ? 'success' : 'danger'">
+                {{ paymentInfo.indentStatue || '未支付' }}
               </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="remark" label="备注">
-            <template #default="scope">
-              {{ scope.row.remark || '无' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="收费凭证" width="120">
-            <template #default="scope">
-              <el-popover 
-                placement="right" 
-                trigger="hover" 
-                v-if="scope.row.img"
-              >
-                <template #reference>
-                  <el-button type="primary" link size="small">查看凭证</el-button>
-                </template>
-                <img :src="scope.row.img" style="max-width: 300px;" />
-              </el-popover>
-              <span v-else>无凭证</span>
-            </template>
-          </el-table-column>
-        </el-table>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
         
-        <div class="empty-block" v-if="payments.length === 0 && !loading">
+        <div class="empty-block" v-if="!paymentInfo && !loading">
           <el-empty description="暂无缴费记录" />
         </div>
       </div>
@@ -81,7 +50,7 @@ export default {
   name: 'StudentPaymentView',
   data() {
     return {
-      payments: [],
+      paymentInfo: null,
       loading: false
     }
   },
@@ -106,40 +75,23 @@ export default {
         if (response.data.code === 200) {
           console.log('原始返回数据:', response.data.data)
           
-          // 检查返回的数据类型并进行相应处理
+          // 后端现在只返回一条数据
           if (!response.data.data) {
-            // 如果没有数据，设置为空数组
-            this.payments = []
-          } else if (Array.isArray(response.data.data)) {
-            // 如果是数组，则进行映射处理
-            this.payments = response.data.data.map(item => {
-              return {
-                studentNumber: item.studentNumber || '',
-                studentName: item.studentName || '',
-                hallway: item.hallway || '',
-                amountcard: item.amountcard || '',
-                allmoney: item.allmoney || 0,
-                img: item.img || '',
-                indentStatue: item.indentStatue || '未支付',
-                remark: item.remark || ''
-              }
-            })
+            this.paymentInfo = null
           } else {
-            // 如果是单个对象，将其转换为数组
+            // 处理数据，确保有默认值
             const item = response.data.data
-            this.payments = [{
+            this.paymentInfo = {
               studentNumber: item.studentNumber || '',
               studentName: item.studentName || '',
               hallway: item.hallway || '',
               amountcard: item.amountcard || '',
               allmoney: item.allmoney || 0,
-              img: item.img || '',
-              indentStatue: item.indentStatue || '未支付',
-              remark: item.remark || ''
-            }]
+              indentStatue: item.indentStatue || '未支付'
+            }
           }
           
-          console.log('处理后的缴费数据:', this.payments)
+          console.log('处理后的缴费数据:', this.paymentInfo)
         } else {
           throw new Error(response.data.message || '获取缴费数据失败')
         }
@@ -169,7 +121,46 @@ export default {
   align-items: center;
 }
 
+.payment-info {
+  margin-top: 20px;
+}
+
 .empty-block {
   margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 描述列表样式 */
+:deep(.el-descriptions__label) {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 500;
+  text-align: right;
+  padding: 12px 15px;
+  width: 150px;
+}
+
+:deep(.el-descriptions__content) {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+:deep(.el-tag) {
+  border-radius: 4px;
+  padding: 0 8px;
+  height: 24px;
+  line-height: 24px;
+}
+
+.amount {
+  font-weight: bold;
+  color: #f56c6c;
+}
+
+.amount-desc {
+  font-size: 0.8em;
+  color: #909399;
+  margin-left: 10px;
 }
 </style>

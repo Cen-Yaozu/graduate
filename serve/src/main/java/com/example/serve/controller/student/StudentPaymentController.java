@@ -30,7 +30,7 @@ public class StudentPaymentController {
     @GetMapping("/payment")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseResult<List<PayItem>> getStudentPayments(@RequestParam String studentNumber) {
-        List<PayItem> payments = paymentService.getPaymentListByStudentNumber(studentNumber);
+        PayItem payments = paymentService.getPayItemByStudentNumber(studentNumber);
         return ResponseResult.okResult(payments);
     }
 
