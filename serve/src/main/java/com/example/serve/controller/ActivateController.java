@@ -1,6 +1,7 @@
 package com.example.serve.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.serve.mapper.StudentMapper;
 import com.example.serve.mapper.UserMapper;
 import com.example.serve.pojo.Student;
@@ -243,6 +244,92 @@ public class ActivateController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseResult.errorResult(500, "账号激活失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 忘记密码 - 发送验证码
+     * 根据学号查询学生邮箱并发送验证码
+     */
+    @PostMapping("/send-verify-code")
+    public ResponseResult<Void> sendVerifyCodeForPasswordReset(@RequestBody Map<String, Object> requestBody) {
+        // 从请求体中获取学号
+        String studentNumber = (String) requestBody.get("studentNumber");
+        
+        // 验证参数是否为空
+        if (!StringUtils.hasText(studentNumber)) {
+            return ResponseResult.errorResult(400, "学号不能为空");
+        }
+        
+        try {
+            // 根据学号查询学生信息
+            LambdaQueryWrapper<Student> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Student::getStudentNumber, studentNumber);
+            Student student = studentMapper.selectOne(queryWrapper);
+            
+            // 检查学生是否存在
+            if (student == null) {
+                return ResponseResult.errorResult(404, "未找到该学号对应的学生信息");
+            }
+            
+            // 获取学生邮箱
+            String email = student.getEmail();
+            
+            // 检查邮箱是否为空
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseResult.errorResult(400, "请先激活账号");
+            }
+            
+            // 生成并发送验证码
+            emailService.sendVerificationEmail(email, studentNumber);
+            
+            return ResponseResult.okResult(200, "验证码已发送到邮箱");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "验证码发送失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 重置密码
+     * 验证验证码并更新用户密码
+     */
+    @PostMapping("/reset-password")
+    public ResponseResult<Void> resetPassword(@RequestBody Map<String, Object> requestBody) {
+        String studentNumber = (String) requestBody.get("studentNumber");
+        String verifyCode = (String) requestBody.get("verifyCode");
+        String newPassword = (String) requestBody.get("newPassword");
+        
+        // 验证参数是否为空
+        if (!StringUtils.hasText(studentNumber) || !StringUtils.hasText(verifyCode) || !StringUtils.hasText(newPassword)) {
+            return ResponseResult.errorResult(400, "学号、验证码和新密码不能为空");
+        }
+        
+        try {
+            // 验证验证码
+            boolean isValid = emailService.verifyCode(studentNumber, verifyCode);
+            
+            if (!isValid) {
+                return ResponseResult.errorResult(400, "验证码无效或已过期");
+            }
+            
+            // 查询用户信息
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(User::getStudentNumber, studentNumber);
+            User user = userMapper.selectOne(queryWrapper);
+            
+            if (user == null) {
+                return ResponseResult.errorResult(404, "未找到该学号对应的用户账号");
+            }
+            
+            // 更新密码 (这里假设密码已经在前端进行了加密或者在Service层会处理密码加密)
+            user.setPassword("{noop}"+newPassword);
+            userMapper.updateById(user);
+            
+            return ResponseResult.okResult(200, "密码重置成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "密码重置失败: " + e.getMessage());
         }
     }
 }

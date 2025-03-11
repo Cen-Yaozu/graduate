@@ -3,31 +3,27 @@
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span style="font-weight: bold">专业信息</span>
+          <span style="font-weight: bold">我的班级信息</span>
         </div>
       </template>
-      <el-table :data="classData" style="width: 100%" border stripe :cell-style="{padding: '12px 0'}">
-        <el-table-column prop="majorid" label="专业号" width="80" align="center" />
-        <el-table-column prop="majorname" label="专业名" min-width="180" align="center" />
-        <el-table-column prop="department" label="系别" min-width="180" align="center" />
-        <el-table-column prop="departmentPrize" label="学费" width="80" align="center" />
-      </el-table>
-    </el-card>
-    
-    <el-card class="box-card" style="margin-top: 20px">
-      <template #header>
-        <div class="card-header">
-          <span style="font-weight: bold">班级详情</span>
-        </div>
-      </template>
-      <el-table :data="classDetailData" style="width: 100%" border stripe :cell-style="{padding: '12px 0'}">
-        <el-table-column prop="majorid" label="专业号" width="80" align="center" />
-        <el-table-column prop="classroom" label="班级" width="80" align="center" />
-        <el-table-column prop="fteacherid" label="辅导员" width="80" align="center" />
-        <el-table-column prop="steacherid" label="学习导师" width="80" align="center" />
-        <el-table-column prop="department" label="系别" min-width="150" align="center" />
-        <el-table-column prop="studentCount" label="班级人数" width="80" align="center" />
-      </el-table>
+      
+      <div v-if="loading" class="loading-container">
+        <el-skeleton :rows="3" animated />
+      </div>
+      
+      <div v-else-if="!myClassInfo" class="empty-data">
+        <el-empty description="暂无班级信息" />
+      </div>
+      
+      <div v-else class="class-info">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="系别">{{ myClassInfo.department }}</el-descriptions-item>
+          <el-descriptions-item label="专业">{{ myClassInfo.majorname }}</el-descriptions-item>
+          <el-descriptions-item label="班级">{{ myClassInfo.classroom }}</el-descriptions-item>
+          <el-descriptions-item label="辅导员">{{ myClassInfo.fteacherName }}</el-descriptions-item>
+          <el-descriptions-item label="学习导师">{{ myClassInfo.steacherName }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
     </el-card>
   </div>
 </template>
@@ -37,8 +33,9 @@ export default {
   name: 'StudentClassView',
   data() {
     return {
-      classData: [],
-      classDetailData: []
+      loading: true,
+      myClassInfo: null,
+      classData: []
     };
   },
   methods: {
@@ -63,35 +60,37 @@ export default {
         this.$message.error('获取专业信息失败');
       }
     },
-    async fetchClassInfo() {
+    
+    async fetchMyClassInfo() {
+      this.loading = true;
       try {
-        const response = await this.$http.get('/api/student/class/classes');
-        console.log('班级信息返回数据:', response.data);
+        // 从sessionStorage获取当前学生学号
+        const studentNumber = sessionStorage.getItem('studentNumber');
+        if (!studentNumber) {
+          this.$message.error('未找到学生信息，请重新登录');
+          this.loading = false;
+          return;
+        }
+        
+        // 请求时添加学号参数
+        const response = await this.$http.get(`/api/student/class/my-class?studentNumber=${studentNumber}`);
+        console.log('我的班级信息返回数据:', response.data);
         if (response.data.code === 200) {
-          // 确保正确映射字段
-          this.classDetailData = (response.data.data || []).map(item => {
-            // 处理返回的每个班级数据，确保字段正确映射
-            return {
-              majorid: item.majorid || '',
-              classroom: item.classroom || '',
-              // 使用教师姓名代替教师ID
-              fteacherid: item.fteacherName || item.fteacherid || '',
-              steacherid: item.steacherName || item.steacherid || '',
-              department: item.department || '',
-              studentCount: item.classroomNum || item.studentCount || item.student_count || 0
-            };
-          });
-          console.log('处理后的班级信息数据:', this.classDetailData);
+          this.myClassInfo = response.data.data;
+          console.log('我的班级信息:', this.myClassInfo);
+        } else {
+          this.$message.error(response.data.msg || '获取班级信息失败');
         }
       } catch (error) {
-        console.error('获取班级信息失败:', error);
-        this.$message.error('获取班级信息失败');
+        console.error('获取我的班级信息失败:', error);
+        this.$message.error('获取班级信息失败: ' + (error.response?.data?.msg || error.message));
+      } finally {
+        this.loading = false;
       }
     }
   },
   mounted() {
-    this.fetchMajorInfo();
-    this.fetchClassInfo();
+    this.fetchMyClassInfo();
   }
 };
 </script>
@@ -104,6 +103,29 @@ export default {
 .card-header {
   display: flex;
   align-items: center;
+}
+
+.loading-container {
+  padding: 20px;
+}
+
+.empty-data {
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.class-info {
+  padding: 10px;
+}
+
+/* 添加按钮样式 */
+:deep(.el-button.add-button) {
+  width: auto;
+  min-width: 120px;
+  max-width: 180px;
+  margin-left: auto;
+  margin-right: 20px;
 }
 
 .description-text {
@@ -152,5 +174,20 @@ export default {
   top: 0;
   overflow: hidden;
   box-shadow: none;
+}
+
+/* 描述列表样式优化 */
+:deep(.el-descriptions) {
+  width: 100%;
+}
+
+:deep(.el-descriptions__label) {
+  width: 120px;
+  font-weight: bold;
+  background-color: #f5f7fa;
+}
+
+:deep(.el-descriptions__content) {
+  padding: 12px 10px;
 }
 </style>

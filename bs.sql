@@ -11,7 +11,7 @@
  Target Server Version : 80032 (8.0.32)
  File Encoding         : 65001
 
- Date: 06/03/2025 21:14:01
+ Date: 09/03/2025 21:37:31
 */
 
 SET NAMES utf8mb4;
@@ -187,7 +187,7 @@ INSERT INTO `major` VALUES ('游戏系', '102', '动画', 666);
 -- ----------------------------
 DROP TABLE IF EXISTS `pay`;
 CREATE TABLE `pay`  (
-  `studentNumber` int(10) UNSIGNED ZEROFILL NULL DEFAULT NULL COMMENT '学号',
+  `studentNumber` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '学号',
   `studentName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '姓名',
   `hallway` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '缴费通道',
   `amountcard` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '缴费编号',
@@ -200,57 +200,7 @@ CREATE TABLE `pay`  (
 -- ----------------------------
 -- Records of pay
 -- ----------------------------
-INSERT INTO `pay` VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-
--- ----------------------------
--- Table structure for payment_item
--- ----------------------------
-DROP TABLE IF EXISTS `payment_item`;
-CREATE TABLE `payment_item`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '项目名称',
-  `amount` decimal(10, 2) NOT NULL COMMENT '缴费金额',
-  `deadline` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '截止日期',
-  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '项目描述',
-  `type` int NULL DEFAULT 0 COMMENT '项目类型（0-学费，1-住宿费，2-其他）',
-  `grade` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '适用年级',
-  `major` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '适用专业，为空表示所有专业',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费项目表' ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of payment_item
--- ----------------------------
-INSERT INTO `payment_item` VALUES (1, '2024年秋季学费', 4800.00, '2024-09-01', '2024年秋季学期学费', 0, '2024', NULL);
-INSERT INTO `payment_item` VALUES (2, '2024年秋季住宿费', 1200.00, '2024-09-01', '2024年秋季学期住宿费', 1, '2024', NULL);
-INSERT INTO `payment_item` VALUES (3, '计算机专业实验费', 500.00, '2024-09-15', '计算机专业实验室使用费', 2, '2024', '计算机科学与技术');
-INSERT INTO `payment_item` VALUES (4, '软件工程专业实验费', 600.00, '2024-09-15', '软件工程专业实验室使用费', 2, '2024', '软件工程');
-
--- ----------------------------
--- Table structure for payment_record
--- ----------------------------
-DROP TABLE IF EXISTS `payment_record`;
-CREATE TABLE `payment_record`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `student_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '学号',
-  `payment_item_id` int NOT NULL COMMENT '缴费项目ID',
-  `amount` decimal(10, 2) NOT NULL COMMENT '缴费金额',
-  `payment_method` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '支付方式（微信支付、支付宝、银行卡）',
-  `payment_date` datetime NULL DEFAULT NULL COMMENT '支付时间',
-  `status` int NULL DEFAULT 0 COMMENT '支付状态（0-未支付，1-已支付）',
-  `transaction_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '交易流水号',
-  `remark` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `payment_item_id`(`payment_item_id` ASC) USING BTREE,
-  CONSTRAINT `payment_record_ibfk_1` FOREIGN KEY (`payment_item_id`) REFERENCES `payment_item` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缴费记录表' ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of payment_record
--- ----------------------------
-INSERT INTO `payment_record` VALUES (1, '2024001', 1, 4800.00, '微信支付', '2024-02-15 10:30:00', 1, 'PAY2024021510300012345678', '学费已缴纳');
-INSERT INTO `payment_record` VALUES (2, '2024001', 2, 1200.00, '微信支付', '2024-02-15 10:35:00', 1, 'PAY2024021510350087654321', '住宿费已缴纳');
-INSERT INTO `payment_record` VALUES (3, '2024002', 1, 4800.00, '支付宝', '2024-02-20 14:20:00', 1, 'PAY2024022014200056781234', '学费已缴纳');
+INSERT INTO `pay` VALUES ('214073001', '钱梦娇', '直行通道', 'PAY202503090357593001', 800, 'D:/Users/Merri/Desktop/graduate/uploads/student-photos/receipts/receipt_214073001_1741464025898.jpg', '已缴费', NULL);
 
 -- ----------------------------
 -- Table structure for resume
@@ -270,7 +220,6 @@ CREATE TABLE `resume`  (
 -- Records of resume
 -- ----------------------------
 INSERT INTO `resume` VALUES (1, '214073001', '2019年9月', '2022年6月', '广州市第一中学', '学生');
-INSERT INTO `resume` VALUES (2, '214073001', '2022年9月', '2025年6月', '计算机科学与技术学院', '本科生');
 INSERT INTO `resume` VALUES (3, '214073002', '2018年9月', '2021年6月', '深圳市实验中学', '学生');
 INSERT INTO `resume` VALUES (4, '214073002', '2021年9月', '2024年6月', '软件工程学院', '本科生');
 INSERT INTO `resume` VALUES (5, '214073003', '2017年9月', '2020年6月', '上海市实验中学', '学生');
@@ -319,16 +268,16 @@ CREATE TABLE `student`  (
 -- ----------------------------
 -- Records of student
 -- ----------------------------
-INSERT INTO `student` VALUES (1, '4567891001', '214073001', '钱梦娇', '/uploads/student-photos/669463fa-a0b8-40cf-9443-80230f6befc4.jpg', '男', '2006-09-10', '广东省中山市中山市', NULL, '身份证', '442000200609103879', NULL, '528400 ', '15255715527', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', '四人间', NULL, NULL, NULL, NULL, 401);
-INSERT INTO `student` VALUES (2, '4567891002', '214073002', '侯招弟', NULL, '女', '2006-04-05', '广东省中山市中山市', NULL, '身份证', '442000200604059581', NULL, '528400 ', '13707533319', NULL, '计算机科学与技术', '2021级', '本科', 'cenyaozu@126.com', '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', 101);
-INSERT INTO `student` VALUES (3, '4567891003', '214073003', '西门龙婷', NULL, '女', '2006-04-14', '广东省中山市中山市', NULL, '身份证', '442000200604140443', NULL, '528400 ', '13354924193', NULL, '计算机科学与技术', '2021级', '本科', 'cenyaozu@126.com', '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
-INSERT INTO `student` VALUES (4, '4567891004', '214073004', '曹黄萍', NULL, '女', '2006-11-10', '广东省中山市中山市', NULL, '身份证', '442000200611103800', NULL, '528400 ', '15065724113', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (5, '4567891005', '214073005', '尤岚', NULL, '女', '2006-11-18', '广东省中山市中山市', NULL, '身份证', '442000200611188445', NULL, '528400 ', '15589739287', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
-INSERT INTO `student` VALUES (6, '4567891006', '214073006', '郑子鑫', NULL, '女', '2006-09-17', '广东省中山市中山市', NULL, '身份证', '442000200609176306', NULL, '528400 ', '15207468250', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼1', '110', NULL);
-INSERT INTO `student` VALUES (7, '4567891007', '214073007', '尤有菊', NULL, '女', '2006-01-15', '广东省中山市中山市', NULL, '身份证', '442000200601158322', NULL, '528400 ', '13923404505', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, '宿舍楼2', '202', NULL);
-INSERT INTO `student` VALUES (8, '4567891008', '214073008', '褚燕', NULL, '男', '2006-03-25', '广东省中山市中山市', NULL, '身份证', '442000200603252099', NULL, '528400 ', '13923263024', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (9, '4567891009', '214073009', '韩睿敏', NULL, '男', '2006-08-23', '广东省中山市中山市', NULL, '身份证', '44200020060823915X', NULL, '528400 ', '18868557032', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `student` VALUES (10, '4567891010', '214073010', '郑如霜', NULL, '女', '2006-11-11', '广东省中山市中山市', NULL, '身份证', '442000200611117989', NULL, '528400 ', '13895038053', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `student` VALUES (1, '4567891001', '214073001', '钱梦娇', '/uploads/student-photos/669463fa-a0b8-40cf-9443-80230f6befc4.jpg', '男', '2006-09-10', '广东省中山市中山市', NULL, '身份证', '442000200609103879', NULL, '528400 ', '15255715527', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', '四人间', NULL, 1, NULL, NULL, 401);
+INSERT INTO `student` VALUES (2, '4567891002', '214073002', '侯招弟', NULL, '女', '2006-04-05', '广东省中山市中山市', NULL, '身份证', '442000200604059581', NULL, '528400 ', '13707533319', NULL, '计算机科学与技术', '2021级', '本科', '', '计算机系', '四人间', NULL, 0, '宿舍楼1', '110', 101);
+INSERT INTO `student` VALUES (3, '4567891003', '214073003', '西门龙婷', NULL, '女', '2006-04-14', '广东省中山市中山市', NULL, '身份证', '442000200604140443', NULL, '528400 ', '13354924193', NULL, '计算机科学与技术', '2021级', '本科', '', '计算机系', NULL, NULL, 1, '宿舍楼1', '110', NULL);
+INSERT INTO `student` VALUES (4, '4567891004', '214073004', '曹黄萍', NULL, '女', '2006-11-10', '广东省中山市中山市', NULL, '身份证', '442000200611103800', NULL, '528400 ', '15065724113', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `student` VALUES (5, '4567891005', '214073005', '尤岚', NULL, '女', '2006-11-18', '广东省中山市中山市', NULL, '身份证', '442000200611188445', NULL, '528400 ', '15589739287', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, '宿舍楼1', '110', NULL);
+INSERT INTO `student` VALUES (6, '4567891006', '214073006', '郑子鑫', NULL, '女', '2006-09-17', '广东省中山市中山市', NULL, '身份证', '442000200609176306', NULL, '528400 ', '15207468250', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, '宿舍楼1', '110', NULL);
+INSERT INTO `student` VALUES (7, '4567891007', '214073007', '尤有菊', NULL, '女', '2006-01-15', '广东省中山市中山市', NULL, '身份证', '442000200601158322', NULL, '528400 ', '13923404505', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, '宿舍楼2', '202', NULL);
+INSERT INTO `student` VALUES (8, '4567891008', '214073008', '褚燕', NULL, '男', '2006-03-25', '广东省中山市中山市', NULL, '身份证', '442000200603252099', NULL, '528400 ', '13923263024', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `student` VALUES (9, '4567891009', '214073009', '韩睿敏', NULL, '男', '2006-08-23', '广东省中山市中山市', NULL, '身份证', '44200020060823915X', NULL, '528400 ', '18868557032', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `student` VALUES (10, '4567891010', '214073010', '郑如霜', NULL, '女', '2006-11-11', '广东省中山市中山市', NULL, '身份证', '442000200611117989', NULL, '528400 ', '13895038053', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, 1, NULL, NULL, NULL);
 INSERT INTO `student` VALUES (11, '4567891011', '214073011', '施聪', NULL, '女', '2006-07-12', '广东省中山市中山市', NULL, '身份证', '442000200607120923', NULL, '528400 ', '13623337048', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO `student` VALUES (12, '4567891012', '214073012', '施思', NULL, '男', '2006-07-14', '广东省中山市中山市', NULL, '身份证', '44200020060714399X', NULL, '528400 ', '13991065942', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO `student` VALUES (13, '4567891013', '214073013', '孔传敏', NULL, '女', '2006-10-26', '广东省中山市中山市', NULL, '身份证', '442000200610267707', NULL, '528400 ', '13997521101', NULL, '计算机科学与技术', '2021级', '本科', NULL, '计算机系', NULL, NULL, NULL, NULL, NULL, NULL);
@@ -536,11 +485,8 @@ CREATE TABLE `student_dorm`  (
 -- ----------------------------
 -- Records of student_dorm
 -- ----------------------------
-INSERT INTO `student_dorm` VALUES (214073001, NULL, NULL, '四人间', NULL, NULL);
-INSERT INTO `student_dorm` VALUES (214073002, '侯招弟', '计算机系', '四人间', '宿舍楼1', '110');
-INSERT INTO `student_dorm` VALUES (214073005, '尤岚', '计算机系', '四人间', '宿舍楼1', '110');
-INSERT INTO `student_dorm` VALUES (214073006, '郑子鑫', '计算机系', '四人间', '宿舍楼1', '110');
-INSERT INTO `student_dorm` VALUES (214073003, '西门龙婷', '计算机系', '四人间', '宿舍楼1', '110');
+INSERT INTO `student_dorm` VALUES (214073001, '钱梦娇', '计算机系', '四人间', '', '');
+INSERT INTO `student_dorm` VALUES (214073002, NULL, NULL, '四人间', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for t_authority

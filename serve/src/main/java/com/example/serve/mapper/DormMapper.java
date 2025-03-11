@@ -22,11 +22,14 @@ public interface DormMapper extends BaseMapper<Dorm> {
                         "  <if test='dormsex != null and dormsex != \"\"'>",
                         "    AND d.dormsex = #{dormsex}",
                         "  </if>",
+                        "  <if test='dormType != null and dormType != \"\"'>",
+                        "    AND d.dormType = #{dormType}",
+                        "  </if>",
                         "</where>",
                         "ORDER BY d.department, d.dormitory, d.dormCard",
                         "</script>"
         })
-        IPage<Dorm> selectDormPage(Page<Dorm> page, @Param("keyword") String keyword, @Param("dormsex") String dormsex);
+        IPage<Dorm> selectDormPage(Page<Dorm> page, @Param("keyword") String keyword, @Param("dormsex") String dormsex, @Param("dormType") String dormType);
 
         @Select("SELECT * FROM dorm ORDER BY department, dormitory, dormCard")
         List<Dorm> selectAllDorms();

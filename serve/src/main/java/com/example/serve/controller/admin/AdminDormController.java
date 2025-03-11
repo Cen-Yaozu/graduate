@@ -8,9 +8,12 @@ import com.example.serve.common.Result;
 import com.example.serve.pojo.Dorm;
 import com.example.serve.pojo.Student;
 import com.example.serve.pojo.StudentDorm;
+import com.example.serve.pojo.Classroom;
 import com.example.serve.service.DormService;
 import com.example.serve.service.StudentDormService;
 import com.example.serve.service.StudentService;
+import com.example.serve.service.ClassroomService;
+import com.example.serve.tools.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +39,9 @@ public class AdminDormController {
     @Autowired
     private StudentDormService studentDormService;
 
+    @Autowired
+    private ClassroomService classroomService;
+
     /**
      * 分页获取宿舍列表
      * 
@@ -43,6 +49,7 @@ public class AdminDormController {
      * @param size    每页大小
      * @param keyword 搜索关键词（宿舍楼、房间号等）
      * @param dormsex 宿舍性别（MALE/FEMALE）
+     * @param dormType 宿舍类型（四人间/六人间）
      * @return 宿舍分页数据
      */
     @GetMapping("/list")
@@ -50,9 +57,10 @@ public class AdminDormController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String dormsex) {
+            @RequestParam(required = false) String dormsex,
+            @RequestParam(required = false) String dormType) {
         try {
-            IPage<Dorm> pageResult = dormService.getDormPage(page, size, keyword, dormsex);
+            IPage<Dorm> pageResult = dormService.getDormPage(page, size, keyword, dormsex, dormType);
             Map<String, Object> data = new HashMap<>();
             data.put("list", pageResult.getRecords());
             data.put("total", pageResult.getTotal());
@@ -128,6 +136,55 @@ public class AdminDormController {
     }
 
     /**
+     * 获取宿舍成员列表
+     * @param dormitory 宿舍楼名称
+     * @param dormCard 宿舍号
+     * @return 该宿舍的所有学生信息
+     */
+    @GetMapping("/members")
+    public ResponseResult getDormMembers(
+            @RequestParam String dormitory,
+            @RequestParam String dormCard) {
+        
+        try {
+            // 通过宿舍楼和宿舍号查询该宿舍下的所有学生
+            List<Student> members = studentDormService.getStudentsByDorm(dormitory, dormCard);
+            
+            // 为每个学生添加班级详细信息
+            List<Map<String, Object>> studentList = new ArrayList<>();
+            for (Student student : members) {
+                Map<String, Object> studentInfo = new HashMap<>();
+                studentInfo.put("studentNumber", student.getStudentNumber());
+                studentInfo.put("studentName", student.getStudentName());
+                studentInfo.put("sex", student.getSex());
+                studentInfo.put("department", student.getDepartment());
+                studentInfo.put("majorname", student.getMajorname());
+                
+                // 班级ID
+                Integer classroomId = student.getClassroomId();
+                studentInfo.put("className", student.getClassroomId());
+                
+                // 添加班级详细信息
+                if (classroomId != null) {
+                    Classroom classroom = classroomService.getById(classroomId);
+                    if (classroom != null) {
+                        studentInfo.put("classroom_name", classroom.getClassroom());
+                        studentInfo.put("classroom_department", classroom.getDepartment());
+                        studentInfo.put("classroom_num", classroom.getClassroomNum());
+                    }
+                }
+                
+                studentList.add(studentInfo);
+            }
+            
+            return ResponseResult.okResult(studentList);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "获取宿舍成员失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 根据宿舍分配状态获取学生列表
      * 
      * @param status 分配状态：assigned(已分配), pending(待分配), unassigned(未分配)，如果不传则返回所有学生
@@ -148,12 +205,27 @@ public class AdminDormController {
                     studentInfo.put("sex", student.getSex());
                     studentInfo.put("department", student.getDepartment());
                     studentInfo.put("majorname", student.getMajorname());
-                    studentInfo.put("classroom_id", student.getClassroomId());
+                    
+                    // 查询班级信息
+                    Integer classroomId = student.getClassroomId();
+                    studentInfo.put("classroom_id", classroomId);
+                    
+                    // 添加班级详细信息
+                    if (classroomId != null) {
+                        Classroom classroom = classroomService.getById(classroomId);
+                        if (classroom != null) {
+                            studentInfo.put("classroom_name", classroom.getClassroom());
+                            studentInfo.put("classroom_department", classroom.getDepartment());
+                            studentInfo.put("classroom_num", classroom.getClassroomNum());
+                        }
+                    }
 
                     // 查询宿舍信息
                     StudentDorm studentDorm = studentDormService.getStudentDormInfo(student.getStudentNumber());
                     if (studentDorm != null && studentDorm.getDormitory() != null
-                            && studentDorm.getDormCard() != null) {
+                            && !studentDorm.getDormitory().isEmpty()
+                            && studentDorm.getDormCard() != null
+                            && !studentDorm.getDormCard().isEmpty()) {
                         studentInfo.put("dormitory", studentDorm.getDormitory());
                         studentInfo.put("dormCard", studentDorm.getDormCard());
                         studentInfo.put("dormType", studentDorm.getDormType());
@@ -171,7 +243,9 @@ public class AdminDormController {
                 LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
                 queryWrapper.isNotNull(StudentDorm::getStudentNumber)
                         .isNotNull(StudentDorm::getDormitory)
-                        .isNotNull(StudentDorm::getDormCard);
+                        .isNotNull(StudentDorm::getDormCard)
+                        .ne(StudentDorm::getDormitory, "")
+                        .ne(StudentDorm::getDormCard, "");
                 List<StudentDorm> assignedDorms = studentDormService.list(queryWrapper);
 
                 for (StudentDorm dorm : assignedDorms) {
@@ -184,7 +258,21 @@ public class AdminDormController {
                         studentInfo.put("sex", student.getSex());
                         studentInfo.put("department", student.getDepartment());
                         studentInfo.put("majorname", student.getMajorname());
-                        studentInfo.put("classroom_id", student.getClassroomId());
+                        
+                        // 查询班级信息
+                        Integer classroomId = student.getClassroomId();
+                        studentInfo.put("classroom_id", classroomId);
+                        
+                        // 添加班级详细信息
+                        if (classroomId != null) {
+                            Classroom classroom = classroomService.getById(classroomId);
+                            if (classroom != null) {
+                                studentInfo.put("classroom_name", classroom.getClassroom());
+                                studentInfo.put("classroom_department", classroom.getDepartment());
+                                studentInfo.put("classroom_num", classroom.getClassroomNum());
+                            }
+                        }
+                        
                         studentInfo.put("dormitory", dorm.getDormitory());
                         studentInfo.put("dormCard", dorm.getDormCard());
                         studentInfo.put("dormType", dorm.getDormType());
@@ -197,7 +285,10 @@ public class AdminDormController {
                 // 待分配：查询student_dorm表中的数据，其中的studentnumber字段有值，但是dormitory或dormCard字段为空的
                 LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
                 queryWrapper.isNotNull(StudentDorm::getStudentNumber)
-                        .and(q -> q.isNull(StudentDorm::getDormitory).or().isNull(StudentDorm::getDormCard));
+                        .and(q -> q.isNull(StudentDorm::getDormitory)
+                                .or().eq(StudentDorm::getDormitory, "")
+                                .or().isNull(StudentDorm::getDormCard)
+                                .or().eq(StudentDorm::getDormCard, ""));
                 List<StudentDorm> pendingDorms = studentDormService.list(queryWrapper);
 
                 for (StudentDorm dorm : pendingDorms) {
@@ -210,7 +301,21 @@ public class AdminDormController {
                         studentInfo.put("sex", student.getSex());
                         studentInfo.put("department", student.getDepartment());
                         studentInfo.put("majorname", student.getMajorname());
-                        studentInfo.put("classroom_id", student.getClassroomId());
+                        
+                        // 查询班级信息
+                        Integer classroomId = student.getClassroomId();
+                        studentInfo.put("classroom_id", classroomId);
+                        
+                        // 添加班级详细信息
+                        if (classroomId != null) {
+                            Classroom classroom = classroomService.getById(classroomId);
+                            if (classroom != null) {
+                                studentInfo.put("classroom_name", classroom.getClassroom());
+                                studentInfo.put("classroom_department", classroom.getDepartment());
+                                studentInfo.put("classroom_num", classroom.getClassroomNum());
+                            }
+                        }
+                        
                         studentInfo.put("dormType", dorm.getDormType());
                         studentInfo.put("assignmentStatus", "pending");
 
@@ -237,7 +342,21 @@ public class AdminDormController {
                         studentInfo.put("sex", student.getSex());
                         studentInfo.put("department", student.getDepartment());
                         studentInfo.put("majorname", student.getMajorname());
-                        studentInfo.put("classroom_id", student.getClassroomId());
+                        
+                        // 查询班级信息
+                        Integer classroomId = student.getClassroomId();
+                        studentInfo.put("classroom_id", classroomId);
+                        
+                        // 添加班级详细信息
+                        if (classroomId != null) {
+                            Classroom classroom = classroomService.getById(classroomId);
+                            if (classroom != null) {
+                                studentInfo.put("classroom_name", classroom.getClassroom());
+                                studentInfo.put("classroom_department", classroom.getDepartment());
+                                studentInfo.put("classroom_num", classroom.getClassroomNum());
+                            }
+                        }
+                        
                         studentInfo.put("assignmentStatus", "unassigned");
 
                         resultList.add(studentInfo);
@@ -303,9 +422,17 @@ public class AdminDormController {
     public Result assignDorm(@RequestBody Map<String, Object> requestMap) {
         try {
             String studentNumber = (String) requestMap.get("studentNumber");
+            String studentName = (String) requestMap.get("studentName");  // 获取学生姓名
+            String department = (String) requestMap.get("department");    // 获取系别
             String dormType = (String) requestMap.get("dormType");
             String dormitory = (String) requestMap.get("dormitory");
             String dormCard = (String) requestMap.get("dormCard");
+
+            if(dormType.equals("FOUR")){
+                dormType = "四人间";
+            }else if (dormType.equals("SIX")){
+                dormType = "六人间";
+            }
 
             if (studentNumber == null || dormType == null || dormitory == null || dormCard == null) {
                 return Result.error("缺少必要的参数");
@@ -324,7 +451,19 @@ public class AdminDormController {
                 existingDorm.setDormitory(dormitory);
                 existingDorm.setDormCard(dormCard);
                 existingDorm.setDormType(dormType);
-                studentDormService.updateById(existingDorm);
+                
+                // 更新学生姓名和系别（如果有提供）
+                if (studentName != null && !studentName.isEmpty()) {
+                    existingDorm.setStudentName(studentName);
+                }
+                if (department != null && !department.isEmpty()) {
+                    existingDorm.setDepartment(department);
+                }
+                
+                boolean updated = studentDormService.updateStudentDorm(existingDorm);
+                if (!updated) {
+                    return Result.error("更新宿舍分配失败");
+                }
             } else {
                 // 创建新的宿舍分配
                 StudentDorm newDorm = new StudentDorm();
@@ -332,7 +471,19 @@ public class AdminDormController {
                 newDorm.setDormitory(dormitory);
                 newDorm.setDormCard(dormCard);
                 newDorm.setDormType(dormType);
-                studentDormService.save(newDorm);
+                
+                // 设置学生姓名和系别（如果有提供）
+                if (studentName != null && !studentName.isEmpty()) {
+                    newDorm.setStudentName(studentName);
+                }
+                if (department != null && !department.isEmpty()) {
+                    newDorm.setDepartment(department);
+                }
+                
+                boolean saved = studentDormService.save(newDorm);
+                if (!saved) {
+                    return Result.error("保存宿舍分配失败");
+                }
             }
 
             return Result.success("宿舍分配成功");
@@ -352,9 +503,16 @@ public class AdminDormController {
     public Result assignDormBatch(@RequestBody Map<String, Object> requestMap) {
         try {
             List<String> studentNumbers = (List<String>) requestMap.get("studentNumbers");
+            List<Map<String, Object>> studentInfoList = (List<Map<String, Object>>) requestMap.get("studentInfoList");
             String dormType = (String) requestMap.get("dormType");
             String dormitory = (String) requestMap.get("dormitory");
             String dormCard = (String) requestMap.get("dormCard");
+
+            if(dormType.equals("FOUR")){
+                dormType = "四人间";
+            }else if (dormType.equals("SIX")){
+                dormType = "六人间";
+            }
 
             if (studentNumbers == null || studentNumbers.isEmpty() || dormType == null || dormitory == null
                     || dormCard == null) {
@@ -372,6 +530,19 @@ public class AdminDormController {
                         failedStudents.add(studentNumber);
                         continue;
                     }
+                    
+                    // 从学生信息列表中查找学生的姓名和系别
+                    String studentName = null;
+                    String department = null;
+                    if (studentInfoList != null) {
+                        for (Map<String, Object> studentInfo : studentInfoList) {
+                            if (studentNumber.equals(studentInfo.get("studentNumber"))) {
+                                studentName = (String) studentInfo.get("studentName");
+                                department = (String) studentInfo.get("department");
+                                break;
+                            }
+                        }
+                    }
 
                     // 检查该学生是否已有宿舍
                     StudentDorm existingDorm = studentDormService.getStudentDormInfo(studentNumber);
@@ -380,7 +551,21 @@ public class AdminDormController {
                         existingDorm.setDormitory(dormitory);
                         existingDorm.setDormCard(dormCard);
                         existingDorm.setDormType(dormType);
-                        studentDormService.updateById(existingDorm);
+                        
+                        // 设置学生姓名和系别（如果有）
+                        if (studentName != null && !studentName.isEmpty()) {
+                            existingDorm.setStudentName(studentName);
+                        }
+                        if (department != null && !department.isEmpty()) {
+                            existingDorm.setDepartment(department);
+                        }
+                        
+                        // 使用基于条件的更新而不是基于ID的更新
+                        boolean updated = studentDormService.updateStudentDorm(existingDorm);
+                        if (!updated) {
+                            failedStudents.add(studentNumber);
+                            continue;
+                        }
                     } else {
                         // 创建新的宿舍分配
                         StudentDorm newDorm = new StudentDorm();
@@ -388,7 +573,20 @@ public class AdminDormController {
                         newDorm.setDormitory(dormitory);
                         newDorm.setDormCard(dormCard);
                         newDorm.setDormType(dormType);
-                        studentDormService.save(newDorm);
+                        
+                        // 设置学生姓名和系别（如果有）
+                        if (studentName != null && !studentName.isEmpty()) {
+                            newDorm.setStudentName(studentName);
+                        }
+                        if (department != null && !department.isEmpty()) {
+                            newDorm.setDepartment(department);
+                        }
+                        
+                        boolean saved = studentDormService.save(newDorm);
+                        if (!saved) {
+                            failedStudents.add(studentNumber);
+                            continue;
+                        }
                     }
 
                     successCount++;
@@ -441,6 +639,38 @@ public class AdminDormController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("移除宿舍分配失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取宿舍选择统计数据
+     * 统计已选择宿舍的学生数量
+     * 
+     * @return 统计结果
+     */
+    @GetMapping("/student-dorm/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result getDormStats() {
+        try {
+            // 查询已分配宿舍的学生数量（dormitory和dormCard都不为空的记录）
+            LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.isNotNull(StudentDorm::getStudentNumber)
+                    .isNotNull(StudentDorm::getDormitory)
+                    .isNotNull(StudentDorm::getDormCard)
+                    .ne(StudentDorm::getDormitory, "")
+                    .ne(StudentDorm::getDormCard, "");
+            
+            // 获取已选择宿舍的学生数量
+            long selectedCount = studentDormService.count(queryWrapper);
+            
+            // 构建返回数据
+            Map<String, Object> data = new HashMap<>();
+            data.put("selectedCount", selectedCount);
+            
+            return Result.success(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取宿舍统计数据失败: " + e.getMessage());
         }
     }
 }

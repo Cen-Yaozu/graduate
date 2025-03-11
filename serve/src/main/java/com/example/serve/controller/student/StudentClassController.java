@@ -33,4 +33,17 @@ public class StudentClassController extends BaseController {
             return new ResponseResult<>(500, "获取班级信息失败");
         }
     }
+    
+    // 修改接口：从请求参数获取学号
+    @GetMapping("/my-class")
+    public ResponseResult<Object> getMyClassInfo(@RequestParam("studentNumber") String studentNumber) {
+        try {
+            // 使用前端传递的学号参数
+            return new ResponseResult<>(200, "获取学生班级信息成功", 
+                    classService.getStudentClassInfo(studentNumber));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseResult<>(500, "获取学生班级信息失败: " + e.getMessage());
+        }
+    }
 }

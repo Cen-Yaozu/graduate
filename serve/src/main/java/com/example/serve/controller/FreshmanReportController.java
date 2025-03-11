@@ -145,11 +145,14 @@ public class FreshmanReportController {
                 return ResponseResult.errorResult(400, "学生信息或学号不能为空");
             }
             
-            // 获取学生ID
+            // 获取学生学号
             String studentNumber = student.getStudentNumber();
             
-            // 检查学生信息是否已经完成
-            Student existingStudent = studentMapper.selectById(studentNumber);
+            // 检查学生信息是否已经完成 - 使用学号而不是ID查询
+            LambdaQueryWrapper<Student> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Student::getStudentNumber, studentNumber);
+            Student existingStudent = studentMapper.selectOne(queryWrapper);
+            
             if (existingStudent != null && existingStudent.getHometown() != null && existingStudent.getNation() != null
                 && existingStudent.getPoliteAspect() != null && existingStudent.getStudentPhone() != null
                 && existingStudent.getAddress() != null && !existingStudent.getHometown().isEmpty() 
@@ -158,8 +161,15 @@ public class FreshmanReportController {
                 return ResponseResult.errorResult(403, "信息已经提交，不允许修改");
             }
             
-            // 更新学生基本信息
-            studentMapper.updateById(student);
+            // 更新学生基本信息 - 使用条件更新而不是通过ID更新
+            if (existingStudent != null) {
+                // 设置ID以确保更新正确的记录
+                student.setId(existingStudent.getId());
+                studentMapper.updateById(student);
+            } else {
+                // 如果不存在则插入新记录
+                studentMapper.insert(student);
+            }
             
             // 保存简历信息
             if (resumes != null && !resumes.isEmpty()) {

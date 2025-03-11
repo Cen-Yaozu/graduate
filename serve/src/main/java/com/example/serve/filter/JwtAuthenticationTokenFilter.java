@@ -42,6 +42,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 uri.contains("/api/verify-student") ||
                 uri.contains("/api/send-verification") ||
                 uri.contains("/api/activate-account") ||
+                uri.contains("/api/reset-password") ||
+                uri.contains("/api/send-verify-code") ||
                 uri.contains("api/verify-code") ||
                 // 放行静态资源请求
                 uri.startsWith("/uploads/")

@@ -50,4 +50,37 @@ public class LoginController {
         }
         return ResponseResult.errorResult(AppHttpCodeEnum.LOGIN_ERROR);
     }
+    
+    /**
+     * 修改密码
+     * @param passwordInfo 包含旧密码和新密码的信息
+     * @return 操作结果
+     */
+    @PostMapping("/updatePassword")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER') or hasRole('STUDENT')")
+    public ResponseResult updatePassword(@RequestBody Map<String, String> passwordInfo) {
+        try {
+            // 获取请求中的参数
+            String oldPassword = passwordInfo.get("oldPassword");
+            String newPassword = passwordInfo.get("newPassword");
+            String username = passwordInfo.get("username"); // 当前登录用户名/学号
+            
+            // 参数校验
+            if (!StringUtils.hasLength(oldPassword) || !StringUtils.hasLength(newPassword) || !StringUtils.hasLength(username)) {
+                return ResponseResult.errorResult(AppHttpCodeEnum.ERROR, "参数不完整");
+            }
+            
+            // 调用服务层方法修改密码
+            boolean result = loginService.updatePassword(username, oldPassword, newPassword);
+            
+            if (result) {
+                return ResponseResult.okResult("密码修改成功");
+            } else {
+                return ResponseResult.errorResult(AppHttpCodeEnum.SYSTEM_ERROR, "原密码不正确或修改失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(AppHttpCodeEnum.SYSTEM_ERROR, "密码修改失败: " + e.getMessage());
+        }
+    }
 }

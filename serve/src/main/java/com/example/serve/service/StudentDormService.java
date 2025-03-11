@@ -1,6 +1,7 @@
 package com.example.serve.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.serve.pojo.Student;
 import com.example.serve.pojo.StudentDorm;
 import java.util.List;
 import java.util.Map;
@@ -61,4 +62,13 @@ public interface StudentDormService extends IService<StudentDorm> {
      * @return 保存是否成功
      */
     boolean save(StudentDorm studentDorm);
+
+    /**
+     * 根据宿舍楼和宿舍号获取该宿舍的所有学生
+     *
+     * @param dormitory 宿舍楼
+     * @param dormCard 宿舍号
+     * @return 学生列表
+     */
+    List<Student> getStudentsByDorm(String dormitory, String dormCard);
 }

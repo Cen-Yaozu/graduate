@@ -19,4 +19,11 @@ public interface ClassService {
      * @return 班级信息列表
      */
     List<Map<String, Object>> getAllClasses();
+    
+    /**
+     * 根据学生学号获取学生所在班级的详细信息
+     * @param studentNumber 学生学号
+     * @return 包含班级、专业、系别、辅导员、学习导师信息的Map
+     */
+    Map<String, Object> getStudentClassInfo(String studentNumber);
 }

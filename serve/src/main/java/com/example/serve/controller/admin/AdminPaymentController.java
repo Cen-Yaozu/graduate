@@ -149,4 +149,40 @@ public class AdminPaymentController {
             return ResponseResult.errorResult(500, "获取缴费记录失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 获取缴费状态统计
+     * 返回已缴费、未缴费的学生数量，用于仪表盘展示
+     * 
+     * @return 缴费状态统计数据
+     */
+    @GetMapping("/stats")
+    public ResponseResult<Map<String, Object>> getPaymentStatistics() {
+        try {
+            // 获取总学生数
+            long totalStudents = studentService.count();
+            
+            // 获取已缴费学生数
+            LambdaQueryWrapper<Student> paidWrapper = new LambdaQueryWrapper<>();
+            paidWrapper.eq(Student::getPaymentStatus, 1);
+            long paidStudents = studentService.count(paidWrapper);
+            
+            // 获取未缴费学生数
+            LambdaQueryWrapper<Student> unpaidWrapper = new LambdaQueryWrapper<>();
+            unpaidWrapper.eq(Student::getPaymentStatus, 0);
+            long unpaidStudents = studentService.count(unpaidWrapper);
+            
+            // 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("total", totalStudents);
+            result.put("paid", paidStudents);
+            result.put("unpaid", unpaidStudents);
+            result.put("paidRate", totalStudents > 0 ? (double) paidStudents / totalStudents * 100 : 0);
+            
+            return ResponseResult.okResult(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "获取缴费统计数据失败");
+        }
+    }
 }

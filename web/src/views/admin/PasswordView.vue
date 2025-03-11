@@ -50,6 +50,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const passwordFormRef = ref(null)
 const passwordForm = ref({
@@ -82,12 +83,10 @@ const validateConfirmPass = (rule, value, callback) => {
 
 const rules = {
   oldPassword: [
-    { required: true, message: '请输入原密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+    { required: true, message: '请输入原密码', trigger: 'blur' }
   ],
   newPassword: [
-    { required: true, validator: validatePass, trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+    { required: true, validator: validatePass, trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, validator: validateConfirmPass, trigger: 'blur' }
@@ -101,16 +100,30 @@ const handleSubmit = async () => {
   await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端API修改密码
-        // await updatePasswordAPI({
-        //   oldPassword: passwordForm.value.oldPassword,
-        //   newPassword: passwordForm.value.newPassword
-        // })
-        ElMessage.success('密码修改成功')
-        resetForm()
+        // 调用后端API修改密码
+        const response = await axios.post('/updatePassword', {
+          oldPassword: passwordForm.value.oldPassword,
+          newPassword: passwordForm.value.newPassword,
+          username: sessionStorage.getItem('studentNumber') // 从sessionStorage获取学号
+        }, {
+          headers: {
+            'Authorization': 'Bearer ' + sessionStorage.getItem('token') // 从sessionStorage获取token
+          }
+        })
+        
+        if (response.data.code === 200) {
+          ElMessage.success('密码修改成功')
+          resetForm()
+        } else {
+          ElMessage.error(response.data.msg || '修改密码失败')
+        }
       } catch (error) {
         console.error('修改密码失败：', error)
-        ElMessage.error('修改密码失败')
+        if (error.response?.status === 401) {
+          ElMessage.error('登录已过期，请重新登录')
+        } else {
+          ElMessage.error(error.response?.data?.msg || '修改密码失败，请稍后重试')
+        }
       }
     }
   })

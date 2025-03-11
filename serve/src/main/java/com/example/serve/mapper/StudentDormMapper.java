@@ -133,4 +133,18 @@ public interface StudentDormMapper extends BaseMapper<StudentDorm> {
 
     @Delete("DELETE FROM student_dorm WHERE studentNumber = #{studentNumber}")
     int deleteByStudentNumber(@Param("studentNumber") String studentNumber);
+    
+    /**
+     * 根据宿舍楼和宿舍号获取所有学生信息
+     * 
+     * @param dormitory 宿舍楼
+     * @param dormCard 宿舍号
+     * @return 学生列表
+     */
+    @Select("SELECT s.* FROM student s " +
+            "JOIN student_dorm sd ON s.studentNumber = sd.studentNumber " +
+            "WHERE sd.dormitory = #{dormitory} AND sd.dormCard = #{dormCard} " +
+            "ORDER BY s.studentNumber")
+    List<Student> getStudentsByDormInfo(@Param("dormitory") String dormitory, 
+                                      @Param("dormCard") String dormCard);
 }

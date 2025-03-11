@@ -185,6 +185,12 @@ const router=createRouter({
                     meta: { title: "教师管理" }
                 },
                 {
+                    path: "arrives",
+                    name: "admin-arrives",
+                    component: () => import('@/views/admin/ArriveManageView.vue'),
+                    meta: { title: "抵校管理" }
+                },
+                {
                     path: "password",
                     name: "admin-password",
                     component: () => import('@/views/admin/PasswordView.vue'),

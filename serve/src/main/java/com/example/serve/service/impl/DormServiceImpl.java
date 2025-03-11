@@ -38,7 +38,7 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
     private ClassroomMapper classroomMapper;
 
     @Override
-    public IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex) {
+    public IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex, String dormType) {
         Page<Dorm> pageParam = new Page<>(page, size);
 
         // 将英文性别参数转换为中文
@@ -51,7 +51,19 @@ public class DormServiceImpl extends ServiceImpl<DormMapper, Dorm> implements Do
             }
         }
 
-        IPage<Dorm> dormPage = dormMapper.selectDormPage(pageParam, keyword, dormSexChinese);
+        // 将宿舍类型转换为数据库格式
+        String dormTypeChinese = null;
+        if (dormType != null && !dormType.isEmpty()) {
+            if ("FOUR".equalsIgnoreCase(dormType)) {
+                dormTypeChinese = "四人间";
+            } else if ("SIX".equalsIgnoreCase(dormType)) {
+                dormTypeChinese = "六人间";
+            } else if ("EIGHT".equalsIgnoreCase(dormType)) {
+                dormTypeChinese = "八人间";
+            }
+        }
+
+        IPage<Dorm> dormPage = dormMapper.selectDormPage(pageParam, keyword, dormSexChinese, dormTypeChinese);
 
         // 获取每个宿舍的成员
         dormPage.getRecords().forEach(dorm -> {

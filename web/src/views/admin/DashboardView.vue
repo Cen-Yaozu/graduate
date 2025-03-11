@@ -26,8 +26,8 @@
       <el-col :span="6">
         <el-card class="box-card">
           <div class="card-header">
-            <div class="title">抵校率</div>
-            <div class="value">{{ stats.arrivalRate }}%</div>
+            <div class="title">已选宿舍人数</div>
+            <div class="value">{{ stats.dormSelectedCount }}</div>
           </div>
           <div class="icon-container">
             <el-icon class="icon"><el-icon-location /></el-icon>
@@ -55,8 +55,8 @@
               <span>学生专业分布</span>
             </div>
           </template>
-          <div class="chart-container">
-            <div class="chart-placeholder">专业分布图表将显示在这里</div>
+          <div class="chart-container" v-loading="chartLoading">
+            <div ref="majorChartRef" class="chart"></div>
           </div>
         </el-card>
       </el-col>
@@ -67,28 +67,9 @@
               <span>缴费状态统计</span>
             </div>
           </template>
-          <div class="chart-container">
-            <div class="chart-placeholder">缴费统计图表将显示在这里</div>
+          <div class="chart-container" v-loading="chartLoading">
+            <div ref="paymentChartRef" class="chart"></div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>最近抵校学生</span>
-            </div>
-          </template>
-          <el-table :data="recentArrivals" style="width: 100%">
-            <el-table-column prop="studentNumber" label="学号" width="120" />
-            <el-table-column prop="name" label="姓名" width="120" />
-            <el-table-column prop="major" label="专业" />
-            <el-table-column prop="arrivalTime" label="抵校时间" width="180" />
-            <el-table-column prop="dormitory" label="宿舍号" width="120" />
-          </el-table>
         </el-card>
       </el-col>
     </el-row>
@@ -96,7 +77,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, getCurrentInstance } from 'vue'
 // 引入需要使用的图标
 import {
   User,
@@ -104,6 +85,17 @@ import {
   Location,
   Star
 } from '@element-plus/icons-vue'
+// 引入 echarts 核心模块
+import * as echarts from 'echarts/core'
+// 引入图表类型
+import { PieChart } from 'echarts/charts'
+// 引入组件
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+// 引入渲染器
+import { CanvasRenderer } from 'echarts/renderers'
+
+// 注册必须的组件
+echarts.use([TitleComponent, TooltipComponent, LegendComponent, GridComponent, PieChart, CanvasRenderer])
 
 export default {
   name: 'DashboardView',
@@ -115,56 +107,271 @@ export default {
     ElIconStar: Star
   },
   setup() {
+    const { proxy } = getCurrentInstance()
+    
     const stats = ref({
       studentCount: 587,
       paymentRate: 83,
-      arrivalRate: 75,
+      dormSelectedCount: 0,
       newStudentCount: 215
     })
+    
+    const chartLoading = ref(false)
+    const majorChartRef = ref(null)
+    const paymentChartRef = ref(null)
+    let majorChart = null
+    let paymentChart = null
+    
+    // 专业分布图表配置
+    const majorChartOption = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        right: 10,
+        top: 'center',
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: {
+          fontSize: 12
+        }
+      },
+      series: [
+        {
+          name: '专业分布',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          center: ['40%', '50%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 16,
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: 120, name: '计算机科学与技术' },
+            { value: 85, name: '软件工程' },
+            { value: 70, name: '人工智能' },
+            { value: 65, name: '信息安全' },
+            { value: 60, name: '物联网工程' },
+            { value: 55, name: '数据科学与大数据技术' },
+            { value: 50, name: '智能科学与技术' },
+            { value: 45, name: '网络工程' },
+            { value: 37, name: '电子信息工程' }
+          ]
+        }
+      ]
+    }
+    
+    // 缴费状态图表配置
+    const paymentChartOption = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)'
+      },
+      legend: {
+        bottom: 'bottom',
+        left: 'center',
+        itemWidth: 12,
+        itemHeight: 12,
+        textStyle: {
+          fontSize: 12
+        }
+      },
+      color: ['#67C23A', '#F56C6C'],
+      series: [
+        {
+          name: '缴费状态',
+          type: 'pie',
+          radius: '70%',
+          center: ['50%', '45%'],
+          data: [
+            { value: 485, name: '已缴费', itemStyle: { color: '#67C23A' } },
+            { value: 102, name: '未缴费', itemStyle: { color: '#F56C6C' } }
+          ],
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          },
+          label: {
+            formatter: '{b}: {c} ({d}%)',
+            fontSize: 12
+          }
+        }
+      ]
+    }
 
-    const recentArrivals = ref([
-      {
-        studentNumber: '2024001',
-        name: '张三',
-        major: '计算机科学与技术',
-        arrivalTime: '2024-08-31 09:30:45',
-        dormitory: 'A栋301'
-      },
-      {
-        studentNumber: '2024002',
-        name: '李四',
-        major: '软件工程',
-        arrivalTime: '2024-08-31 10:15:22',
-        dormitory: 'A栋302'
-      },
-      {
-        studentNumber: '2024003',
-        name: '王五',
-        major: '信息安全',
-        arrivalTime: '2024-08-31 10:45:18',
-        dormitory: 'B栋201'
-      },
-      {
-        studentNumber: '2024004',
-        name: '赵六',
-        major: '人工智能',
-        arrivalTime: '2024-08-31 11:20:35',
-        dormitory: 'B栋205'
+    // 初始化图表
+    const initCharts = () => {
+      // 确保DOM已经渲染
+      nextTick(() => {
+        // 初始化专业分布图表
+        if (majorChartRef.value) {
+          majorChart = echarts.init(majorChartRef.value)
+          majorChart.setOption(majorChartOption)
+          
+          // 添加窗口调整大小事件监听器
+          window.addEventListener('resize', handleResize)
+        }
+        
+        // 初始化缴费状态图表
+        if (paymentChartRef.value) {
+          paymentChart = echarts.init(paymentChartRef.value)
+          paymentChart.setOption(paymentChartOption)
+        }
+      })
+    }
+    
+    // 处理窗口大小调整
+    const handleResize = () => {
+      if (majorChart) {
+        majorChart.resize()
       }
-    ])
+      if (paymentChart) {
+        paymentChart.resize()
+      }
+    }
 
-    const fetchStats = () => {
-      // 实际项目中，这里应该调用API获取统计数据
-      console.log('加载仪表盘数据')
+    // 获取数据并更新图表
+    const fetchChartData = async () => {
+      chartLoading.value = true
+      try {
+        // 确保proxy和$http存在
+        if (proxy && proxy.$http) {
+          // 调用API获取专业分布数据
+          console.log('正在请求专业分布数据...')
+          const { data: majorResult } = await proxy.$http.get('/api/admin/student/major-stats')
+          console.log('收到专业分布数据响应:', majorResult)
+          if (majorResult.code === 200) {
+            const newData = majorResult.data.map(item => ({
+              value: item.count,
+              name: item.majorName
+            }))
+            if (majorChart) {
+              majorChart.setOption({ series: [{ data: newData }] })
+              console.log('专业分布图表更新完成')
+            }
+          }
+          
+          // 调用API获取缴费统计数据
+          console.log('正在请求缴费统计数据...')
+          const { data: paymentResult } = await proxy.$http.get('/api/admin/payment/stats')
+          console.log('收到缴费统计数据响应:', paymentResult)
+          if (paymentResult.code === 200) {
+            const newData = [
+              { value: paymentResult.data.paid, name: '已缴费', itemStyle: { color: '#67C23A' } },
+              { value: paymentResult.data.unpaid, name: '未缴费', itemStyle: { color: '#F56C6C' } }
+            ]
+            if (paymentChart) {
+              paymentChart.setOption({ series: [{ data: newData }] })
+              console.log('缴费统计图表更新完成')
+            }
+            
+            // 更新缴费率统计卡片
+            stats.value.paymentRate = Math.round(paymentResult.data.paidRate)
+            console.log('缴费率更新为:', stats.value.paymentRate)
+          }
+        } else {
+          console.warn('HTTP客户端未定义，使用默认数据')
+        }
+        
+        console.log('加载图表数据成功')
+      } catch (error) {
+        console.error('获取图表数据失败：', error)
+        // 发生错误时使用默认数据（当前已配置的数据）
+      } finally {
+        chartLoading.value = false
+      }
+    }
+
+    const fetchStats = async () => {
+      try {
+        // 确保proxy和$http存在
+        if (proxy && proxy.$http) {
+          // 获取学生总数
+          console.log('正在请求学生总数...')
+          const { data: studentCountResult } = await proxy.$http.get('/api/admin/student/list', { params: { page: 1, size: 1 } })
+          console.log('收到学生总数响应:', studentCountResult)
+          if (studentCountResult.code === 200) {
+            stats.value.studentCount = studentCountResult.data.total
+            console.log('学生总数更新为:', stats.value.studentCount)
+          }
+          
+          // 获取缴费统计（包括缴费率）
+          console.log('正在请求缴费统计数据...')
+          const { data: paymentResult } = await proxy.$http.get('/api/admin/payment/stats')
+          console.log('收到缴费统计响应:', paymentResult)
+          if (paymentResult.code === 200) {
+            stats.value.paymentRate = Math.round(paymentResult.data.paidRate)
+            console.log('缴费率更新为:', stats.value.paymentRate)
+          }
+          
+          // 获取已选择宿舍的学生数量
+          console.log('正在请求宿舍选择统计数据...')
+          const { data: dormResult } = await proxy.$http.get('/api/admin/dorm/student-dorm/stats')
+          console.log('收到宿舍选择统计响应:', dormResult)
+          if (dormResult.code === 200) {
+            stats.value.dormSelectedCount = dormResult.data.selectedCount
+            console.log('已选择宿舍人数更新为:', stats.value.dormSelectedCount)
+          }
+          
+          // 获取预计新生数（这里仍使用默认值，可根据实际情况修改）
+        } else {
+          console.warn('HTTP客户端未定义，使用默认数据')
+        }
+        
+        console.log('加载仪表盘数据成功')
+      } catch (error) {
+        console.error('获取仪表盘数据失败：', error)
+        // 发生错误时保留默认数据
+      }
     }
 
     onMounted(() => {
       fetchStats()
+      initCharts()
+      fetchChartData()
+    })
+    
+    onBeforeUnmount(() => {
+      // 移除事件监听器
+      window.removeEventListener('resize', handleResize)
+      
+      // 销毁图表实例
+      if (majorChart) {
+        majorChart.dispose()
+        majorChart = null
+      }
+      if (paymentChart) {
+        paymentChart.dispose()
+        paymentChart = null
+      }
     })
 
     return {
       stats,
-      recentArrivals
+      chartLoading,
+      majorChartRef,
+      paymentChartRef
     }
   }
 }
@@ -213,14 +420,12 @@ export default {
 }
 
 .chart-container {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 350px;
+  width: 100%;
 }
 
-.chart-placeholder {
-  color: #909399;
-  font-size: 14px;
+.chart {
+  height: 100%;
+  width: 100%;
 }
 </style> 

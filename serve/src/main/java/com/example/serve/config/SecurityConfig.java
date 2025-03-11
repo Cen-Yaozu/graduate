@@ -56,6 +56,8 @@ public class SecurityConfig {
                         "/api/send-verification",
                         "/api/activate-account",
                         "/api/verify-code",
+                        "/api/reset-password",
+                        "/api/send-verify-code",
                         // 添加所有可能的静态资源访问路径
                         "/uploads/**")
                         .permitAll()

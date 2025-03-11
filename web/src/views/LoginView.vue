@@ -48,11 +48,9 @@
                     <el-button type="primary" style="margin-top:34px;width: 100%;height: 40px;background-color: #3a71a8" @click="login">登录</el-button>
                   </el-form-item>
                   <el-form-item>
-                    <el-button type="success" style="margin-top:10px;width: 100%;height: 40px;" @click="goToActivate">账号激活</el-button>
-                  </el-form-item>
-                  <el-form-item>
-                    <div class="login-options">
-                      <span style="color: #3a71a8; cursor: pointer;" @click="findpassword = true">忘记密码?</span>
+                    <div class="button-group">
+                      <el-button type="success" style="height: 40px;" @click="goToActivate">账号激活</el-button>
+                      <el-button type="warning" style="height: 40px;" @click="findpassword = true">忘记密码</el-button>
                     </div>
                   </el-form-item>
                 </el-form>
@@ -63,39 +61,53 @@
       </el-main>
     </el-container>
   </div>
-  <el-dialog v-model="findpassword" title="重置密码" width="460px" style="text-align: initial;">
-    <el-form :model="form"
-             :rules="rules"
-             label-width="auto" style="max-width: 600px;padding: 20px 30px">
+  <!-- 重置密码对话框 -->
+  <el-dialog 
+    v-model="findpassword" 
+    title="重置密码" 
+    width="460px" 
+    style="text-align: initial;"
+    class="reset-password-dialog">
+    <el-form 
+      :model="form"
+      :rules="rules"
+      ref="resetFormRef"
+      label-width="auto" 
+      style="max-width: 600px;padding: 20px 30px">
       <el-form-item label="账号" prop="studentNumber">
         <el-input
-            v-model="form.studentNumber"
-            style="max-width: 600px"
-            placeholder="输入学号"
-
+          v-model="form.studentNumber"
+          style="max-width: 600px"
+          placeholder="输入学号"
         >
           <template #append>
-            <el-button>发送邮箱验证码</el-button>
+            <el-button 
+              @click="sendVerifyCode"
+              :disabled="codeSending || countdown > 0"
+            >
+              {{ countdown > 0 ? `发送邮箱验证码(${countdown}s)` : '发送邮箱验证码' }}
+            </el-button>
           </template>
         </el-input>
       </el-form-item>
-      <el-form-item label="验证码" prop="textcode">
-        <el-input v-model="form.textcode"></el-input>
+      <el-form-item label="验证码" prop="verifyCode">
+        <el-input v-model="form.verifyCode"></el-input>
       </el-form-item>
       <el-form-item label="密码" prop="pass">
-        <el-input v-model="form.pass" type="password" autocomplete="off" />
+        <el-input v-model="form.pass" type="password" autocomplete="off" show-password />
       </el-form-item>
       <el-form-item label="确认密码" prop="checkPass">
         <el-input
-            v-model="form.checkPass"
-            type="password"
-            autocomplete="off"
+          v-model="form.checkPass"
+          type="password"
+          autocomplete="off"
+          show-password
         />
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer" style="display: flex;justify-content: center;">
-        <el-button type="primary" style="width: 80%" @click="dialogFormVisible = false">
+        <el-button type="primary" style="width: 80%" :loading="resetLoading" @click="submitResetPassword">
           确认
         </el-button>
       </div>
@@ -109,21 +121,13 @@ import { ElMessage } from 'element-plus'
 export default {
   name: "LoginView",
   data(){
-    // 是否为空
-    var checknull=(rule,value,callback)=>{
-      if (value.trim()===''){
-        callback(new Error("不可为空"))
-      }else {
-        return callback();
-      }
-    };
     // 密码
     var validatePass = (rule, value, callback) => {
       if (value === '') {
         callback(new Error('请输入密码'));
       } else {
-        if (this.check.checkPass !== '') {
-          this.$refs.check.validateField('checkPass');
+        if (this.form.checkPass !== '') {
+          this.$refs.resetFormRef && this.$refs.resetFormRef.validateField('checkPass');
         }
         callback();
       }
@@ -131,17 +135,18 @@ export default {
     var validatePass2 = (rule, value, callback) => {
       if (value === '') {
         callback(new Error('请再次输入密码'));
-      } else if (value !== this.check.pass) {
+      } else if (value !== this.form.pass) {
         callback(new Error('两次输入密码不一致!'));
       } else {
         callback();
       }
     };
     return{
-      findpassword:false,
+      findpassword: false,
+      resetLoading: false,
       form:{
         studentNumber: '',
-        textcode:'',
+        verifyCode: '',
         pass:'',
         checkPass:'',
       },
@@ -158,25 +163,27 @@ export default {
       },
       rules:{
         studentNumber:[
-          { required: true, message: '请填写' },
-          { type: 'number', validator: checknull,trigger: 'blur' },
+          { required: true, message: '请填写学号' },
         ],
-        textcode:[
-          { required: true, message: '请填写' },
+        verifyCode:[
+          { required: true, message: '请填写验证码' },
         ],
         pass:[
-          { required: true, message: '请填写' },
+          { required: true, message: '请填写密码' },
           { validator: validatePass, trigger: 'blur'},
         ],
         checkPass: [
-          { required: true, message: '请填写' },
+          { required: true, message: '请再次输入密码' },
           { validator: validatePass2, trigger: 'blur' }
         ],
       },
       check: {
         pass: '',
         checkPass: ''
-      }
+      },
+      codeSending: false,
+      countdown: 0,
+      timer: null
     }
   },
   methods: {
@@ -240,7 +247,112 @@ export default {
     },
     goToActivate() {
       this.$router.push('/activate');
+    },
+    
+    // 发送验证码
+    async sendVerifyCode() {
+      if (!this.form.studentNumber) {
+        ElMessage.warning('请输入学号');
+        return;
+      }
+      
+      if (this.countdown > 0) return;
+      
+      this.codeSending = true;
+      try {
+        const response = await this.$http.post('/api/send-verify-code', {
+          studentNumber: this.form.studentNumber
+        });
+        
+        if (response.data.code === 200) {
+          ElMessage.success('验证码已发送，请查收邮件');
+          // 开始倒计时
+          this.countdown = 60;
+          this.startCountdown();
+        } else {
+          ElMessage.error(response.data.msg || '发送验证码失败');
+        }
+      } catch (error) {
+        console.error('发送验证码失败:', error);
+        ElMessage.error('发送验证码失败: ' + (error.response?.data?.msg || '服务器错误'));
+      } finally {
+        this.codeSending = false;
+      }
+    },
+    
+    // 提交重置密码
+    async submitResetPassword() {
+      if (!this.$refs.resetFormRef) return;
+      
+      this.$refs.resetFormRef.validate(async (valid) => {
+        if (valid) {
+          if (!this.form.verifyCode) {
+            ElMessage.error('请输入验证码');
+            return;
+          }
+          
+          if (this.form.pass !== this.form.checkPass) {
+            ElMessage.error('两次输入的密码不一致');
+            return;
+          }
+          
+          this.resetLoading = true;
+          try {
+            // 使用验证码重置密码
+            const resetResponse = await this.$http.post('/api/reset-password', {
+              studentNumber: this.form.studentNumber,
+              verifyCode: this.form.verifyCode,
+              newPassword: this.form.pass
+            });
+            
+            if (resetResponse.data.code === 200) {
+              ElMessage.success('密码重置成功，请使用新密码登录');
+              this.findpassword = false;
+              this.resetForm();
+            } else {
+              ElMessage.error(resetResponse.data.msg || '密码重置失败');
+            }
+          } catch (error) {
+            console.error('密码重置失败:', error);
+            ElMessage.error('密码重置失败: ' + (error.response?.data?.msg || '服务器错误'));
+          } finally {
+            this.resetLoading = false;
+          }
+        } else {
+          ElMessage.warning('请填写完整信息');
+          return false;
+        }
+      });
+    },
+    
+    // 倒计时方法
+    startCountdown() {
+      clearInterval(this.timer);
+      this.timer = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          clearInterval(this.timer);
+        }
+      }, 1000);
+    },
+    
+    // 重置表单
+    resetForm() {
+      this.form = {
+        studentNumber: '',
+        verifyCode: '',
+        pass: '',
+        checkPass: ''
+      };
+      this.countdown = 0;
+      clearInterval(this.timer);
     }
+  },
+  
+  beforeUnmount() {
+    // 清除定时器
+    clearInterval(this.timer);
   }
 }
 </script>
@@ -323,8 +435,65 @@ export default {
 /* 添加登录选项样式 */
 .login-options {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   margin-top: 10px;
   font-size: 14px;
+}
+
+.forget-password-btn {
+  color: #3a71a8;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.forget-password-btn:hover {
+  color: #1d4b7c;
+}
+
+/* 按钮组样式 */
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.button-group .el-button {
+  width: 48%;
+}
+
+/* 重置密码对话框样式 */
+.reset-password-dialog :deep(.el-dialog__header) {
+  text-align: center;
+}
+
+/* 验证码行样式 */
+.verify-code-row {
+  display: flex;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dialog-footer .el-button {
+  width: 48%;
+  height: 40px;
+  font-size: 14px;
+}
+
+.dialog-footer .cancel-btn {
+  border-color: #dcdfe6;
+  background-color: #ffffff;
+}
+
+.dialog-footer .confirm-btn {
+  background-color: #409eff;
+  border-color: #409eff;
 }
 </style>

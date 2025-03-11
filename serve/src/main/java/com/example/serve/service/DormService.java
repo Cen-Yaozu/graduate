@@ -14,7 +14,7 @@ public interface DormService extends IService<Dorm> {
     /**
      * 分页查询宿舍列表
      */
-    IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex);
+    IPage<Dorm> getDormPage(int page, int size, String keyword, String dormsex, String dormType);
 
     /**
      * 获取所有宿舍

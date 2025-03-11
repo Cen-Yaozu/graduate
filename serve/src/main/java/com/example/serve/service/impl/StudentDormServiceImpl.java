@@ -113,7 +113,21 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
 
     @Override
     public boolean updateStudentDorm(StudentDorm studentDorm) {
-        return updateById(studentDorm);
+        // 使用学号作为条件进行更新，而不是依赖ID
+        if (studentDorm == null || studentDorm.getStudentNumber() == null) {
+            return false;
+        }
+        
+        LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(StudentDorm::getStudentNumber, studentDorm.getStudentNumber());
+        
+        try {
+            int result = studentDormMapper.update(studentDorm, queryWrapper);
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -125,20 +139,64 @@ public class StudentDormServiceImpl extends ServiceImpl<StudentDormMapper, Stude
     @Override
     public boolean save(StudentDorm studentDorm) {
         try {
+            if (studentDorm == null || studentDorm.getStudentNumber() == null) {
+                return false;
+            }
+            
             // 检查是否已存在记录
             StudentDorm existingDorm = getStudentDormInfo(studentDorm.getStudentNumber());
             if (existingDorm != null) {
-                // 已存在则更新
+                // 已存在则更新 - 确保所有必要字段都被设置
                 studentDorm.setStudentNumber(existingDorm.getStudentNumber());
+                // 保留原有值，如果新对象中没有设置
+                if (studentDorm.getStudentName() == null) {
+                    studentDorm.setStudentName(existingDorm.getStudentName());
+                }
+                if (studentDorm.getDepartment() == null) {
+                    studentDorm.setDepartment(existingDorm.getDepartment());
+                }
+                
                 return updateStudentDorm(studentDorm);
             } else {
                 // 不存在则插入
-                int result = studentDormMapper.insert(studentDorm);
-                return result > 0;
+                try {
+                    int result = studentDormMapper.insert(studentDorm);
+                    return result > 0;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("插入学生宿舍记录失败: " + e.getMessage());
+                    return false;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            System.err.println("保存学生宿舍信息失败: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 根据宿舍楼和宿舍号获取该宿舍的所有学生
+     *
+     * @param dormitory 宿舍楼
+     * @param dormCard 宿舍号
+     * @return 学生列表
+     */
+    @Override
+    public List<Student> getStudentsByDorm(String dormitory, String dormCard) {
+        // 首先查询StudentDorm表获取该宿舍的所有学生记录
+        LambdaQueryWrapper<StudentDorm> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(StudentDorm::getDormitory, dormitory)
+                   .eq(StudentDorm::getDormCard, dormCard);
+        
+        List<StudentDorm> dormList = studentDormMapper.selectList(queryWrapper);
+        
+        // 如果没有记录，返回空列表
+        if (dormList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 查询每个宿舍记录对应的学生信息
+        return studentDormMapper.getStudentsByDormInfo(dormitory, dormCard);
     }
 }

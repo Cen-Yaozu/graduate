@@ -35,6 +35,10 @@
             <el-icon><el-icon-user /></el-icon>
             <span>教师管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/arrives">
+            <el-icon><el-icon-location /></el-icon>
+            <span>抵校管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/password">
             <el-icon><el-icon-key /></el-icon>
             <span>修改密码</span>
@@ -69,9 +73,20 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Odometer, User, Money, OfficeBuilding, House, Key, ArrowDown, Location } from '@element-plus/icons-vue'
 
 export default {
   name: 'AdminLayout',
+  components: {
+    ElIconOdometer: Odometer,
+    ElIconUser: User,
+    ElIconMoney: Money,
+    ElIconOfficeBuilding: OfficeBuilding,
+    ElIconHouse: House,
+    ElIconKey: Key,
+    ElIconArrowDown: ArrowDown,
+    ElIconLocation: Location
+  },
   setup() {
     const router = useRouter()
     const route = useRoute()

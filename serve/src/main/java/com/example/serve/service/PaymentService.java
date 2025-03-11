@@ -83,4 +83,12 @@ public interface PaymentService {
      * @return 该学生的所有缴费记录列表
      */
     List<PayItem> getPaymentListByStudentNumber(String studentNumber);
+
+    /**
+     * 根据缴费编号查询缴费记录
+     *
+     * @param amountcard 缴费编号
+     * @return 缴费记录
+     */
+    PayItem getPayItemByAmountcard(String amountcard);
 }

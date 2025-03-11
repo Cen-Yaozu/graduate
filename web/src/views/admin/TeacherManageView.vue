@@ -1,81 +1,86 @@
 <template>
-  <div class="teacher-manage">
-    <div class="header">
-      <h2>教师管理</h2>
-      <el-button type="primary" @click="handleAdd">添加教师</el-button>
-    </div>
-
-    <!-- 搜索栏 -->
-    <div class="search-container">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="请输入教师姓名/工号进行搜索"
-        class="search-input"
-        clearable
-        @clear="handleSearch"
-        @keyup.enter="handleSearch"
-      >
-        <template #append>
-          <el-button @click="handleSearch">
-            <el-icon><Search /></el-icon>
-          </el-button>
-        </template>
-      </el-input>
-    </div>
-
-    <!-- 表格部分 -->
-    <div class="table-container">
-      <!-- 表头 -->
-      <div class="table-header">
-        <div class="header-item id-col">工号</div>
-        <div class="header-item name-col">姓名</div>
-        <div class="header-item phone-col">联系电话</div>
-        <div class="header-item action-col">操作</div>
-      </div>
-
-      <!-- 表格内容 -->
-      <div v-loading="loading" class="table-body">
-        <div v-for="item in teacherList" :key="item.teacherNumber" class="table-row">
-          <div class="cell id-col">{{ item.teacherNumber }}</div>
-          <div class="cell name-col">{{ item.teacherName }}</div>
-          <div class="cell phone-col">{{ item.teacherPhone }}</div>
-          <div class="cell action-col">
-            <el-button type="primary" size="small" @click="handleEdit(item)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(item)">删除</el-button>
+  <div class="teacher-manage-container">
+    <el-card class="box-card">
+      <template #header>
+        <div class="card-header">
+          <span style="font-weight: bold; font-size: 18px;">教师管理</span>
+          <div class="header-actions">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="请输入教师姓名/工号进行搜索"
+              style="width: 250px; margin-right: 15px"
+              clearable
+              @clear="handleSearch"
+              @keyup.enter="handleSearch"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button type="primary" @click="handleAdd">添加教师</el-button>
           </div>
         </div>
-        <div v-if="teacherList.length === 0 && !loading" class="empty-data">
-          暂无数据
-        </div>
-      </div>
+      </template>
+      
+      <!-- 教师数据表格 -->
+      <el-table
+        v-loading="loading"
+        :data="teacherList"
+        style="width: 100%"
+        border
+        row-key="teacherNumber"
+        :header-cell-style="{
+          background: '#f5f7fa',
+          color: '#606266',
+          fontWeight: '600',
+          height: '55px'
+        }"
+        :cell-style="{
+          padding: '12px 0',
+          height: '60px'
+        }"
+        :row-class-name="tableRowClassName"
+        highlight-current-row
+      >
+        <el-table-column type="index" label="序号" width="80" align="center" />
+        <el-table-column prop="teacherNumber" label="工号" min-width="120" align="center" />
+        <el-table-column prop="teacherName" label="姓名" min-width="120" align="center" />
+        <el-table-column prop="teacherPhone" label="联系电话" min-width="150" align="center" />
+        <el-table-column label="操作" width="200" align="center" fixed="right">
+          <template #default="scope">
+            <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
+              <el-icon><Edit /></el-icon>编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(scope.row)">
+              <el-icon><Delete /></el-icon>删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
+      <!-- 没有数据时显示 -->
+      <el-empty v-if="teacherList.length === 0 && !loading" description="暂无教师数据" />
+      
       <!-- 分页 -->
       <div class="pagination-container">
-        <div class="pagination-info">
-          共 {{ total }} 条
-        </div>
+        <span class="total-text">共 {{ total }} 条</span>
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          background
           layout="sizes, prev, pager, next, jumper"
           :total="total"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
+          background
         />
-        <div class="pagination-jumper">
-          前往
-          <el-input 
-            v-model="jumpPage" 
-            @keyup.enter="handleJumpPage"
-            size="small"
-            class="page-jump-input"
-          ></el-input>
-          页
+        <div class="page-info">
+          <span>前往</span>
+          <el-input v-model="jumpPage" type="text" style="width: 50px" @keyup.enter="handleJumpPage" />
+          <span>页</span>
         </div>
       </div>
-    </div>
+    </el-card>
 
     <!-- 添加/编辑教师对话框 -->
     <el-dialog
@@ -106,7 +111,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Edit, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 
@@ -164,6 +169,11 @@ const rules = {
     { required: true, message: '请输入联系电话', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ]
+}
+
+// 表格行样式
+const tableRowClassName = ({ rowIndex }) => {
+  return rowIndex % 2 === 0 ? 'even-row' : 'odd-row'
 }
 
 // 获取教师列表
@@ -307,151 +317,87 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.teacher-manage {
+.teacher-manage-container {
   padding: 20px;
-  background-color: #f8f8f8;
-  min-height: calc(100vh - 60px);
 }
 
-.header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding: 10px 20px;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.search-container {
+.header-actions {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 15px;
-}
-
-.search-input {
-  width: 320px;
-}
-
-.table-container {
-  background-color: white;
-  padding: 20px;
-  border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* 表格样式 */
-.table-header {
-  display: flex;
-  background-color: #f5f7fa;
-  border-top: 1px solid #ebeef5;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.header-item {
-  padding: 12px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-  font-weight: 500;
-  color: #606266;
-}
-
-.table-row {
-  display: flex;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.table-row:hover {
-  background-color: #f5f7fa;
-}
-
-.cell {
-  padding: 12px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-  color: #606266;
-}
-
-/* 列宽设置 */
-.id-col {
-  flex: 1;
-  max-width: 120px;
-}
-
-.name-col {
-  flex: 2;
-  max-width: 180px;
-}
-
-.phone-col {
-  flex: 2;
-  max-width: 180px;
-}
-
-.action-col {
-  flex: 2;
-  min-width: 180px;
-  display: flex;
-  justify-content: center;
   align-items: center;
 }
 
-.action-col .el-button {
-  margin: 0 5px;
+/* 表格样式优化 */
+:deep(.el-table) {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-bg-color: #f5f7fa;
+  --el-table-row-hover-bg-color: #f5f7fa;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.empty-data {
-  padding: 40px 0;
-  text-align: center;
-  color: #909399;
+:deep(.el-table::before) {
+  display: none; /* 去除默认底部边框 */
 }
 
+:deep(.el-table__header) {
+  border: none;
+}
+
+:deep(.el-table__cell) {
+  border-bottom: 1px solid #ebeef5;
+}
+
+:deep(.el-table .even-row) {
+  background-color: #fafafa;
+}
+
+:deep(.el-table .odd-row) {
+  background-color: #ffffff;
+}
+
+:deep(.el-table .cell) {
+  padding: 0 10px;
+}
+
+/* 分页容器样式 */
 .pagination-container {
   margin-top: 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  padding: 10px 0;
 }
 
-.pagination-info {
+.total-text {
+  margin-right: 15px;
   color: #606266;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.pagination-jumper {
+.page-info {
+  margin-left: 15px;
+  color: #606266;
+  font-size: 13px;
   display: flex;
   align-items: center;
-  color: #606266;
-  font-size: 14px;
+  gap: 5px;
 }
 
-.page-jump-input {
-  width: 50px;
-  margin: 0 5px;
+:deep(.el-pagination) {
+  margin: 0;
+  padding: 0;
 }
 
-:deep(.el-button) {
-  margin-left: 5px;
-  margin-right: 5px;
-}
-
-:deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
-  background-color: #409eff;
-}
-
-:deep(.el-input__inner) {
-  height: 36px;
+:deep(.el-pagination .el-input__inner) {
+  height: 28px;
+  line-height: 28px;
 }
 </style>

@@ -11,9 +11,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 管理员-学生管理控制器
@@ -129,5 +131,41 @@ public class AdminStudentController {
         result.put("fail", fail);
 
         return ResponseResult.okResult(result);
+    }
+
+    /**
+     * 获取学生专业分布统计
+     * 统计各专业学生数量，用于仪表盘展示
+     *
+     * @return 专业分布统计数据
+     */
+    @GetMapping("/major-stats")
+    public ResponseResult<List<Map<String, Object>>> getMajorDistribution() {
+        try {
+            // 获取所有学生列表
+            List<Student> allStudents = studentService.list();
+            
+            // 按专业分组并计数
+            Map<String, Long> majorCountMap = allStudents.stream()
+                    .filter(student -> student.getMajorname() != null && !student.getMajorname().isEmpty())
+                    .collect(Collectors.groupingBy(Student::getMajorname, Collectors.counting()));
+            
+            // 转换为前端所需的数据格式
+            List<Map<String, Object>> result = new ArrayList<>();
+            majorCountMap.forEach((majorName, count) -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("majorName", majorName);
+                item.put("count", count);
+                result.add(item);
+            });
+            
+            // 按学生数量降序排序
+            result.sort((a, b) -> Long.compare((Long) b.get("count"), (Long) a.get("count")));
+            
+            return ResponseResult.okResult(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.errorResult(500, "获取专业分布统计失败");
+        }
     }
 }

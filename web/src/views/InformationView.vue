@@ -86,7 +86,7 @@
       </el-table-column>
       <el-table-column align="right">
         <template #header>
-          <el-button class="mt-4" type="primary" style="width: 20%" @click="onAddItem" :disabled="isInfoCompleted">
+          <el-button class="mt-4 add-btn" type="primary" @click="onAddItem" :disabled="isInfoCompleted">
             添加
           </el-button>
         </template>
@@ -133,7 +133,7 @@
       </el-table-column>
       <el-table-column align="right">
         <template #header>
-          <el-button class="mt-4" type="primary" style="width: 55%" @click="onAddFamilyItem" :disabled="isInfoCompleted">
+          <el-button class="mt-4 add-btn" type="primary" @click="onAddFamilyItem" :disabled="isInfoCompleted">
             添加
           </el-button>
         </template>
@@ -518,5 +518,12 @@ export default {
 
 .el-descriptions {
   margin-bottom: 15px;
+}
+
+/* 添加按钮样式 */
+.add-btn {
+  width: auto !important;
+  min-width: 80px;
+  max-width: 120px;
 }
 </style>
